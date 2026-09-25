@@ -75,7 +75,6 @@ def cmd_generate(args) -> None:
 
         spec = plan_report(request, **options)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.with_suffix(".spec.json").write_text(spec.model_dump_json(indent=2), encoding="utf-8")
         DocxRenderer(spec.profile, base_dir=Path.cwd()).save(spec, out)
         _finish(out, spec, args.pdf, True)
     else:
