@@ -33,12 +33,15 @@ def test_mcp_end_to_end(tmp_path):
             out = tmp_path / "mcp.docx"
             saved = await client.call_tool("save_report", {"doc_id": doc_id, "output_path": str(out), "update_toc_pages": False})
             result = saved.structured_content
-            assert out.exists() and (tmp_path / "mcp.spec.json").exists()
-            assert not list(tmp_path.glob("*.pdf"))
+            assert out.exists()
+            assert [f.name for f in tmp_path.iterdir()] == ["mcp.docx"], "chỉ xuất đúng một file .docx"
             assert result["watermarks_removed"] is not None
             assert result["lint"]["errors"] == 0 and result["lint"]["warnings"] == 0
 
-            reloaded = await client.call_tool("load_spec", {"spec_path": str(tmp_path / "mcp.spec.json")})
+            spec_json = (await client.call_tool("get_spec", {"doc_id": doc_id})).content[0].text
+            spec_path = tmp_path / "mcp-spec.json"
+            spec_path.write_text(spec_json, encoding="utf-8")
+            reloaded = await client.call_tool("load_spec", {"spec_path": str(spec_path)})
             assert reloaded.structured_content["blocks"] == 3
 
             md = await client.call_tool("read_document", {"path": str(out)})

@@ -2,7 +2,7 @@
 
 LLM (Claude Desktop, Claude Code, hoặc agent trong `wordreport.agent`) gọi các tool này để
 dựng báo cáo từng bước. Mỗi báo cáo đang soạn là một phiên (doc_id) giữ một ReportSpec trong
-bộ nhớ; `save_report` render spec ra .docx (kèm file .spec.json để chỉnh sửa lại về sau).
+bộ nhớ; `save_report` render spec ra đúng một file .docx.
 
 Chạy:  wordreport-mcp            (stdio - dùng cho Claude Desktop / Claude Code)
        wordreport mcp --http     (streamable HTTP tại http://127.0.0.1:8765/mcp)
@@ -272,7 +272,7 @@ def get_spec(doc_id: str) -> str:
 
 @tool
 def load_spec(spec_path: str) -> dict[str, Any]:
-    """Mở một file ReportSpec JSON (ví dụ *.spec.json đã lưu) thành phiên soạn thảo mới."""
+    """Mở một file ReportSpec JSON (ví dụ examples/*.json) thành phiên soạn thảo mới."""
     path = Path(spec_path)
     spec = ReportSpec.model_validate_json(path.read_text(encoding="utf-8"))
     doc_id = uuid.uuid4().hex[:8]
@@ -282,16 +282,14 @@ def load_spec(spec_path: str) -> dict[str, Any]:
 
 @tool
 def save_report(doc_id: str, output_path: str, update_toc_pages: bool = True) -> dict[str, Any]:
-    """Render báo cáo ra file .docx (kèm .spec.json để chỉnh sửa lại), điền số trang mục lục,
+    """Render báo cáo ra đúng một file .docx (không tạo file phụ), điền số trang mục lục,
     xoá nhãn trình tạo/AI trong metadata, rồi lint. Chỉ xuất .docx."""
     session = _session(doc_id)
     out = Path(output_path)
     if out.suffix.lower() != ".docx":
         out = out.with_suffix(".docx")
     DocxRenderer(session.spec.profile, base_dir=session.base_dir).save(session.spec, out)
-    spec_file = out.with_suffix(".spec.json")
-    spec_file.write_text(session.spec.model_dump_json(indent=2), encoding="utf-8")
-    result: dict[str, Any] = {"docx": str(out.resolve()), "spec": str(spec_file.resolve())}
+    result: dict[str, Any] = {"docx": str(out.resolve())}
     toc = update_toc_pages and session.spec.include_toc
     result.update(finalize(out, toc=toc, author=DocxRenderer.author(session.spec)))
     lint = lint_report(out, session.spec.profile)

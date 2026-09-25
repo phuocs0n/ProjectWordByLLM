@@ -4,7 +4,7 @@ Công cụ tự động soạn thảo và định dạng báo cáo Microsoft Wor
 Bạn đưa ghi chú, đề bài hoặc tài liệu nguồn; Claude viết nội dung và dựng báo cáo qua một **MCP server
 dành riêng cho Word**. Một **kho skill** cho Claude biết quy tắc của từng tác vụ Word.
 
-- Đầu ra mặc định: **một file `.docx`** (không xuất PDF).
+- Đầu ra: **đúng một file `.docx`** cho mỗi báo cáo (không xuất PDF, không tạo file phụ).
 - Mọi file xuất ra được **watermark-remover** tự động xoá nhãn công cụ/AI trong metadata.
 
 Quy chuẩn định dạng mặc định lấy từ báo cáo mẫu *Báo cáo đồ án học phần Mạng máy tính – CLC HCMUS*
