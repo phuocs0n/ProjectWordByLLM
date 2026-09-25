@@ -18,6 +18,8 @@ from pathlib import Path
 
 from docx import Document
 
+from .watermark_remover import remove_watermarks
+
 TOC_STYLES = {"toc 1", "toc 2", "toc 3"}
 
 
@@ -162,3 +164,19 @@ def update_toc(docx_path: str | Path) -> str:
                 break
     document.save(str(docx_path))
     return "libreoffice"
+
+
+def finalize(docx_path: str | Path, toc: bool = True, author: str | None = None) -> dict[str, object]:
+    """Bước cuối cho mọi file xuất ra: điền số trang mục lục rồi xoá nhãn trình tạo/AI.
+
+    Chỉ ghi ra .docx (PDF tạm dùng để dò số trang nằm trong thư mục tạm và bị xoá ngay).
+    Làm sạch chạy SAU cùng vì Word COM có thể ghi lại metadata khi lưu.
+    """
+    result: dict[str, object] = {}
+    if toc:
+        try:
+            result["toc"] = update_toc(docx_path)
+        except Exception as err:  # bước phụ, không làm hỏng việc xuất file
+            result["toc"] = f"lỗi cập nhật mục lục: {err}"
+    result["watermarks_removed"] = remove_watermarks(docx_path, author=author)
+    return result

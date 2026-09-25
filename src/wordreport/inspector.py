@@ -18,6 +18,7 @@ from docx.table import Table
 from docx.text.paragraph import Paragraph
 
 from .style_profile import load_profile
+from .watermark_remover import find_watermarks
 
 # Lỗi chính tả hay gặp (nhiều lỗi lấy từ chính báo cáo mẫu).
 COMMON_TYPOS = {
@@ -153,6 +154,9 @@ def lint_docx(path: str | Path, profile: str = "hcmus-clc") -> list[LintIssue]:
     has_page = any(" PAGE " in s.footer._element.xml or "PAGE" in s.footer._element.xml for s in document.sections)
     if not has_page:
         issues.append(LintIssue("warning", "no-page-number", "Footer chưa có số trang tự động (field PAGE)."))
+
+    for label in find_watermarks(path):
+        issues.append(LintIssue("warning", "ai-label", f"Còn nhãn trình tạo/AI: {label} - chạy watermark-remover."))
 
     fonts_seen: dict[str, int] = {}
     empty_run = 0

@@ -14,6 +14,7 @@ dependencies = [
   "pyyaml>=6.0",
   "mcp>=2.0",
   "anthropic[mcp]>=1.8",
+  "lxml>=4.9",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +24,7 @@ dev = ["pytest>=8"]
 [project.scripts]
 wordreport = "wordreport.cli:main"
 wordreport-mcp = "wordreport.mcp_server:main"
+watermark-remover = "wordreport.watermark_remover:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

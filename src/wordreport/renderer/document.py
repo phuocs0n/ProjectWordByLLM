@@ -36,6 +36,7 @@ from ..spec import (
     TableBlock,
 )
 from ..style_profile import load_profile
+from ..watermark_remover import remove_watermarks
 from . import ooxml
 
 ALIGN = {
@@ -108,14 +109,19 @@ class DocxRenderer:
         props = doc.core_properties
         props.title = " - ".join(x for x in (spec.meta.report_type, spec.meta.subject) if x)
         props.subject = spec.meta.topic
-        props.author = ", ".join(m.name for m in spec.meta.members)
-        props.comments = "Tạo bởi wordreport (LLM + MCP)"
+        props.author = self.author(spec)
+        props.comments = ""
         return doc
+
+    @staticmethod
+    def author(spec: ReportSpec) -> str:
+        return ", ".join(m.name for m in spec.meta.members)
 
     def save(self, spec: ReportSpec, path: str | Path) -> Path:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         self.render(spec).save(str(path))
+        remove_watermarks(path, author=self.author(spec))  # không để lại nhãn trình tạo/AI
         return path
 
     # ------------------------------------------------------------------ setup
