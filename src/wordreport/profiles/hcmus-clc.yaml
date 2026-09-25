@@ -1,0 +1,76 @@
+# Style profile trích xuất từ báo cáo mẫu "Báo cáo đồ án học phần Mạng máy tính - CLC HCMUS".
+# Số đo lấy từ PDF (PyMuPDF): khổ Letter 612x792pt, lề 72pt, thân bài Times New Roman 13.9pt,
+# tiêu đề xanh #2F5496, header 12pt có đường kẻ dưới, số trang 12pt có đường kẻ trên,
+# hàng tiêu đề bảng tô xám #D0CECE, siêu liên kết #0563C1.
+name: hcmus-clc
+description: Báo cáo đồ án/học phần kiểu ĐH KHTN - ĐHQG TP.HCM (chương trình CLC)
+
+page:
+  size: letter            # letter | a4
+  margin_top_cm: 2.54
+  margin_bottom_cm: 2.54
+  margin_left_cm: 2.54
+  margin_right_cm: 2.54
+  header_distance_cm: 1.27
+  footer_distance_cm: 1.27
+  cover_border: true      # khung viền trang bìa
+
+fonts:
+  body: Times New Roman
+  code: Consolas
+
+body:
+  size_pt: 14
+  line_spacing: 1.15
+  space_after_pt: 6
+  first_line_indent_cm: 0
+  align: justify
+
+headings:
+  color: "2F5496"
+  front:                  # LỜI MỞ ĐẦU, MỤC LỤC, TÀI LIỆU THAM KHẢO
+    size_pt: 20
+    color: "000000"
+    align: center
+  level1: {size_pt: 14, bold: true, space_before_pt: 12, space_after_pt: 6}
+  level2: {size_pt: 14, bold: true, space_before_pt: 8, space_after_pt: 4, indent_cm: 0.63}
+  level3: {size_pt: 14, bold: true, italic: false, space_before_pt: 6, space_after_pt: 4, indent_cm: 0.63, color: "1F3763"}
+
+header:
+  left: "{faculty}"
+  right: "{class_code}"
+  size_pt: 12
+  border_bottom: true
+
+footer:
+  page_number: center
+  size_pt: 12
+  border_top: true
+
+table:
+  header_fill: "D0CECE"
+  font_size_pt: 13
+  border_color: "000000"
+
+caption:
+  size_pt: 12
+  italic: true
+  figure_label: Hình
+  table_label: Bảng
+
+code:
+  size_pt: 11
+  fill: "F2F2F2"
+  border_color: "2F5496"
+
+hyperlink_color: "0563C1"
+references_numbered: true   # "III. Tài liệu tham khảo" là một chương có số như bản mẫu
+divider_text: "---o0o---"
+
+labels:
+  preface: LỜI MỞ ĐẦU
+  toc: MỤC LỤC
+  references: Tài liệu tham khảo
+  instructors: "Giảng viên hướng dẫn:"
+  members: "Thông tin nhóm:"
+  topic: "Đề tài:"

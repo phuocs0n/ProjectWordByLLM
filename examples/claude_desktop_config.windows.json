@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "word-report": {
+      "command": "C:\\Projects\\ProjectWordByLLM\\.venv\\Scripts\\wordreport-mcp.exe",
+      "args": [],
+      "env": {
+        "WORDREPORT_SKILLS_DIR": "C:\\Projects\\ProjectWordByLLM\\skills"
+      }
+    },
+    "markitdown": {
+      "command": "C:\\Projects\\ProjectWordByLLM\\.venv\\Scripts\\markitdown-mcp.exe",
+      "args": []
+    }
+  }
+}

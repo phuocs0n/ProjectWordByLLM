@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "word-report": {
+      "command": "wordreport-mcp",
+      "args": [],
+      "env": {
+        "WORDREPORT_SKILLS_DIR": "./skills"
+      }
+    },
+    "markitdown": {
+      "command": "markitdown-mcp",
+      "args": []
+    }
+  }
+}
