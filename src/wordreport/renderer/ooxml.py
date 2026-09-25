@@ -262,6 +262,7 @@ _LIST_FORMATS = {
     "number": ("decimal", ["%1.", "%2)", "%3."]),
     "roman": ("lowerRoman", ["%1.", "%2.", "%3."]),
     "alpha": ("lowerLetter", ["%1.", "%2.", "%3."]),
+    "bracket": ("decimal", ["[%1]", "[%2]", "[%3]"]),  # tài liệu tham khảo
 }
 
 

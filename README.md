@@ -26,7 +26,17 @@ flowchart LR
 ```
 
 Claude chỉ lo nội dung và cấu trúc; toàn bộ định dạng (font, lề, đánh số tiêu đề, mục lục, chú thích,
-header/footer) được áp theo style profile (`hcmus-clc` theo bản mẫu, `nd30-a4` cho báo cáo A4 doanh nghiệp).
+header/footer) được áp theo style profile:
+
+| Profile | Dùng cho |
+|---|---|
+| `hcmus-clc` | Báo cáo kiểu CLC HCMUS: Letter, TNR 14pt, tiêu đề xanh, đánh số `I. / 1. / 1.1.` |
+| `hcmus-fetel` | Báo cáo đồ án Khoa ĐT-VT HCMUS: A4, TNR 13pt, giãn dòng 1.5, đánh số theo chương `I. / 1.1. / 1.1.1.`, chú thích "Hình 2.3." |
+| `nd30-a4` | Báo cáo A4 doanh nghiệp/hành chính: lề 3-2-2-2 cm, TNR 13pt |
+
+Hỗ trợ: trang bìa (logo, GVHD, thành viên, lớp), lời mở đầu, phần đầu tuỳ chọn (tóm tắt...), mục lục,
+danh mục hình, danh mục bảng, tiêu đề không đánh số (MỞ ĐẦU, CHỮ VIẾT TẮT...), bảng, hình, khối code,
+hộp ghi chú, tài liệu tham khảo `[1]`.
 
 ## Cài đặt
 
@@ -132,5 +142,5 @@ Thêm skill mới: tạo `skills/<ten-skill>/SKILL.md` với frontmatter `name` 
 ## Giới hạn
 
 - Số trang mục lục chính xác tuyệt đối khi có Microsoft Word; với LibreOffice là ước lượng.
-- Chưa hỗ trợ phụ lục đánh số riêng, danh mục hình/bảng, bảng gộp ô, khổ ngang từng trang.
+- Chưa hỗ trợ phụ lục đánh số riêng, bảng gộp ô, khổ ngang từng trang, công thức toán dạng equation.
 - Logo trường không kèm theo repo; đặt `meta.logo_path` tới file logo của bạn.

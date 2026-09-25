@@ -20,7 +20,7 @@ from docx import Document
 
 from .watermark_remover import remove_watermarks
 
-TOC_STYLES = {"toc 1", "toc 2", "toc 3"}
+TOC_STYLES = {"toc 1", "toc 2", "toc 3", "table of figures"}
 
 
 def find_soffice() -> str | None:
@@ -154,7 +154,15 @@ def update_toc(docx_path: str | Path) -> str:
     with tempfile.TemporaryDirectory() as tmp:
         pdf = export_pdf(docx_path, tmp)
         pages = pdf_pages_text(pdf)
-    numbers = locate_headings([_entry_text(p) for p in toc], pages)
+    # Mỗi field (MỤC LỤC, DANH MỤC HÌNH, DANH MỤC BẢNG) dò độc lập từ đầu tài liệu
+    groups: list[list] = []
+    for paragraph in toc:
+        if not groups or 'w:fldCharType="begin"' in paragraph._p.xml:
+            groups.append([])
+        groups[-1].append(paragraph)
+    numbers: list[int | None] = []
+    for group in groups:
+        numbers += locate_headings([_entry_text(p) for p in group], pages)
     for paragraph, number in zip(toc, numbers):
         if number is None:
             continue

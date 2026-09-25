@@ -85,3 +85,43 @@ def test_lists_restart_numbering(tmp_path):
     doc = Document(str(out))
     num_ids = [p._p.pPr.numPr.numId.val for p in doc.paragraphs if p._p.pPr is not None and p._p.pPr.numPr is not None]
     assert len(num_ids) == 3 and num_ids[0] == num_ids[1] != num_ids[2]
+
+
+def test_chapter_numbering_front_matter_and_lists_of_figures(tmp_path):
+    spec = ReportSpec.model_validate({
+        "profile": "hcmus-fetel",
+        "meta": {"faculty": "Khoa Điện tử - Viễn thông", "class_code": "23DTV", "members": [{"name": "A"}]},
+        "preface": ["Lời nói đầu."],
+        "front_matter": [{"type": "heading", "level": 1, "text": "TÓM TẮT", "numbered": False},
+                         {"type": "paragraph", "text": "Tóm tắt."}],
+        "list_of_figures": True, "list_of_tables": True,
+        "body": [
+            {"type": "heading", "level": 1, "text": "MỞ ĐẦU", "numbered": False},
+            {"type": "heading", "level": 1, "text": "Tổng quan"},
+            {"type": "heading", "level": 2, "text": "Giới thiệu"},
+            {"type": "table", "columns": ["a"], "rows": [["1"]], "caption": "Bảng một"},
+            {"type": "heading", "level": 1, "text": "Thiết kế"},
+            {"type": "heading", "level": 2, "text": "Mức transistor"},
+            {"type": "heading", "level": 3, "text": "Euler"},
+            {"type": "figure_placeholder", "caption": "Hình một"},
+            {"type": "figure_placeholder", "caption": "Hình hai"},
+            {"type": "heading", "level": 1, "text": "BẢNG PHÂN CÔNG", "numbered": False},
+        ],
+        "references": [{"text": "Sách A"}],
+    })
+    out = DocxRenderer(spec.profile).save(spec, tmp_path / "c.docx")
+    doc = Document(str(out))
+    heads = [h["text"] for h in outline(out)]
+    assert heads[:4] == ["LỜI NÓI ĐẦU", "TÓM TẮT", "MỤC LỤC", "DANH MỤC HÌNH"]
+    assert {"MỞ ĐẦU", "I. Tổng quan", "1.1. Giới thiệu", "II. Thiết kế", "2.1. Mức transistor",
+            "2.1.1. Euler", "BẢNG PHÂN CÔNG", "TÀI LIỆU THAM KHẢO"} <= set(heads)
+    captions = [p.text for p in doc.paragraphs if p.style.name == "Caption"]
+    assert captions == ["Bảng 1.1. Bảng một", "Hình 2.1. Hình một", "Hình 2.2. Hình hai"]
+    lists = [p.text.rstrip("\t") for p in doc.paragraphs if p.style.name == "table of figures"]
+    assert lists == ["Hình 2.1. Hình một", "Hình 2.2. Hình hai", "Bảng 1.1. Bảng một"]
+    assert 'TOC \\h \\z \\c "Hình"' in doc.element.body.xml
+    assert doc.sections[2].header.paragraphs[0].text == ""  # profile không có header
+    cover = "\n".join(p.text for p in doc.paragraphs[:12]) + doc.tables[0]._tbl.xml
+    assert "KHOA ĐIỆN TỬ - VIỄN THÔNG" in cover and "23DTV" in cover
+    # không có đoạn ngắt trang rỗng: sang trang bằng "page break before" của tiêu đề
+    assert not any(p.text == "" and "w:br" in p._p.xml and 'w:type="page"' in p._p.xml for p in doc.paragraphs)

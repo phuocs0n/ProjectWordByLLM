@@ -64,13 +64,17 @@ code:
   border_color: "2F5496"
 
 hyperlink_color: "0563C1"
+heading_numbering: section  # section: I./1./1.1.  |  chapter: I./1.1./1.1.1., Hình 2.3
 references_numbered: true   # "III. Tài liệu tham khảo" là một chương có số như bản mẫu
 divider_text: "---o0o---"
 
 labels:
   preface: LỜI MỞ ĐẦU
   toc: MỤC LỤC
+  lof: DANH MỤC HÌNH
+  lot: DANH MỤC BẢNG
   references: Tài liệu tham khảo
   instructors: "Giảng viên hướng dẫn:"
   members: "Thông tin nhóm:"
   topic: "Đề tài:"
+  class: "Lớp:"

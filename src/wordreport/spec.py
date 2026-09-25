@@ -49,6 +49,7 @@ class HeadingBlock(BaseModel):
     type: Literal["heading"]
     level: Literal[1, 2, 3] = Field(description="1 = chương (I.), 2 = mục (1.), 3 = tiểu mục (1.1.)")
     text: str = Field(description="Tiêu đề KHÔNG kèm số thứ tự - renderer tự đánh số")
+    numbered: bool = Field(default=True, description="False cho mục không đánh số: TÓM TẮT, MỞ ĐẦU, CHỮ VIẾT TẮT, BẢNG PHÂN CÔNG...")
 
 
 class ParagraphBlock(BaseModel):
@@ -136,9 +137,15 @@ class ReportSpec(BaseModel):
     profile: str = Field(default="hcmus-clc", description="Tên style profile")
     meta: ReportMeta = Field(default_factory=ReportMeta)
     preface: list[str] = Field(default_factory=list, description="Các đoạn của LỜI MỞ ĐẦU; để trống nếu không cần")
+    preface_title: str = Field(default="", description="Đổi tiêu đề lời mở đầu, ví dụ 'LỜI NÓI ĐẦU'; trống = theo profile")
+    front_matter: list[Block] = Field(default_factory=list, description="Phần đặt giữa lời mở đầu và MỤC LỤC, ví dụ TÓM TẮT")
     include_toc: bool = True
+    list_of_figures: bool = Field(default=False, description="Thêm DANH MỤC HÌNH tự động sau mục lục")
+    list_of_tables: bool = Field(default=False, description="Thêm DANH MỤC BẢNG tự động sau mục lục")
     body: list[Block] = Field(default_factory=list)
     references: list[Reference] = Field(default_factory=list)
+    references_title: str = Field(default="", description="Đổi tiêu đề tài liệu tham khảo; trống = theo profile")
+    references_numbered: bool | None = Field(default=None, description="Tiêu đề tài liệu tham khảo có đánh số chương hay không; null = theo profile")
 
     def outline(self) -> list[str]:
         """Dàn ý dạng chuỗi - dùng cho MCP get_outline và log."""
@@ -148,7 +155,7 @@ class ReportSpec(BaseModel):
         lines = []
         for i, block in enumerate(self.body):
             if isinstance(block, HeadingBlock):
-                label = numberer.next(block.level)
+                label = numberer.next(block.level) if block.numbered else "–"
                 lines.append(f"[{i}] {'  ' * (block.level - 1)}{label} {block.text}")
             else:
                 lines.append(f"[{i}] {'  ' * 3}<{block.type}>")

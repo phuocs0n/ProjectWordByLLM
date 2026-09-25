@@ -162,8 +162,12 @@ def lint_docx(path: str | Path, profile: str = "hcmus-clc") -> list[LintIssue]:
     empty_run = 0
     prev_level = 0
     prev_numbers: dict[int, str] = {}
+    in_cover = True  # section đầu tiên (trang bìa): logo không cần chú thích
     for idx, item in enumerate(items):
         loc = f"khối #{idx}"
+        cover_item = in_cover
+        if isinstance(item, Paragraph) and item._p.pPr is not None and item._p.pPr.find(qn("w:sectPr")) is not None:
+            in_cover = False
         if isinstance(item, Table):
             borders = item._tbl.tblPr.find(qn("w:tblBorders"))
             if borders is not None and borders.find(qn("w:top")) is not None and borders.find(qn("w:top")).get(qn("w:val")) == "nil":
@@ -205,12 +209,13 @@ def lint_docx(path: str | Path, profile: str = "hcmus-clc") -> list[LintIssue]:
             if words > 250:
                 issues.append(LintIssue("info", "long-paragraph", f"Đoạn văn dài {words} từ - cân nhắc tách đoạn.", loc))
 
-        if _has_image(item):
+        if _has_image(item) and not cover_item:
             nxt = items[idx + 1] if idx + 1 < len(items) else None
             if not (isinstance(nxt, Paragraph) and _is_caption(nxt, labels)):
                 issues.append(LintIssue("warning", "figure-without-caption", "Hình chưa có chú thích 'Hình N: ...' phía dưới.", loc))
 
-        if "  " in text.strip():
+        style_name = item.style.name if item.style is not None else ""
+        if "  " in text.strip() and style_name != "Code Block":
             issues.append(LintIssue("info", "double-space", f"Có khoảng trắng kép: '{text.strip()[:50]}'", loc))
         for wrong, right in COMMON_TYPOS.items():
             if wrong in text:

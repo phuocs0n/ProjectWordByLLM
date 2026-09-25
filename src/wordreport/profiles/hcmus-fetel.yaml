@@ -1,0 +1,52 @@
+# Profile đo từ báo cáo đồ án môn học Khoa Điện tử - Viễn thông, ĐH KHTN (PDF "Nhom10"):
+# A4, lề 2,54 cm, Times New Roman 13pt, giãn dòng 1,5, thụt đầu dòng 1 cm, tiêu đề đen,
+# đánh số theo chương (1.1. / 2.5.1.), chú thích "Hình 2.3. …" in đậm, bảng tiêu đề xám #D9D9D9.
+name: hcmus-fetel
+extends: hcmus-clc
+description: Báo cáo đồ án Khoa ĐT-VT HCMUS (A4, TNR 13pt, giãn dòng 1.5, đánh số theo chương)
+
+page:
+  size: a4
+  margin_top_cm: 2.54
+  margin_bottom_cm: 2.54
+  margin_left_cm: 2.54
+  margin_right_cm: 2.5
+  cover_border: true
+
+body:
+  size_pt: 13
+  line_spacing: 1.5
+  space_after_pt: 3
+  first_line_indent_cm: 1.0
+
+headings:
+  color: "000000"
+  front: {size_pt: 14, color: "000000", align: left}
+  level1: {size_pt: 14, space_before_pt: 0, space_after_pt: 12}
+  level2: {size_pt: 13, indent_cm: 0, space_before_pt: 10, space_after_pt: 4}
+  level3: {size_pt: 13, indent_cm: 0, italic: false, color: "000000"}
+
+header:
+  left: ""
+  right: ""
+
+table:
+  header_fill: "D9D9D9"
+  font_size_pt: 12
+
+caption:
+  size_pt: 13
+  italic: false
+  bold_text: true
+  separator: ". "
+
+cover_show_faculty: true
+cover_show_class: true
+heading_numbering: chapter
+references_numbered: false
+divider_text: ""
+
+labels:
+  preface: LỜI NÓI ĐẦU
+  members: "Sinh viên thực hiện:"
+  references: TÀI LIỆU THAM KHẢO
