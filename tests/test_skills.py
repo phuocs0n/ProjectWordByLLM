@@ -28,5 +28,10 @@ def test_skills_reference_real_mcp_tools():
     for skill in library.skills.values():
         mentioned |= set(re.findall(r"`([a-z_]+)\(", skill.body))
     assert mentioned, "skill nên hướng dẫn cách gọi tool"
-    external = {"convert_to_markdown"}  # tool của MCP server markitdown
+    external = {  # tool của MCP server markitdown và MCP Microsoft Word (Office-Word-MCP-Server)
+        "convert_to_markdown", "get_document_info", "get_document_outline", "find_text_in_document",
+        "search_and_replace", "format_text", "set_table_column_widths", "merge_table_cells_vertical",
+        "set_table_cell_alignment", "format_table_cell_text", "add_footnote_after_text", "protect_document",
+        "copy_document", "create_document", "add_heading", "add_paragraph", "convert_to_pdf",
+    }
     assert mentioned - external <= tool_names, mentioned - external - tool_names

@@ -50,6 +50,7 @@ def test_remove_watermarks_cleans_metadata_and_labels(tmp_path):
     assert "docProps/thumbnail.jpeg" not in names
     assert "<Application>" not in app and "<Template>" not in app
     assert src.read_bytes() != out.read_bytes()  # file gốc không bị ghi đè khi có -o
+    assert out.stat().st_mode & 0o777 == src.stat().st_mode & 0o777  # giữ quyền file
 
 
 def test_cli_check_and_overwrite(tmp_path, capsys):

@@ -203,11 +203,18 @@ def cant_split_row(row) -> None:
     trpr.append(_el("w:cantSplit", **{"w:val": "true"}))
 
 
-def page_border(section, color: str = "000000", size: str = "12") -> None:
+def clear_page_border(section) -> None:
+    """Section mới (add_section) sao chép sectPr của section trước, gồm cả viền trang -> xoá trước khi đặt."""
+    for old in section._sectPr.findall(qn("w:pgBorders")):
+        section._sectPr.remove(old)
+
+
+def page_border(section, color: str = "000000", size: str = "12", val: str = "single", space: str = "24") -> None:
     sectpr = section._sectPr
+    clear_page_border(section)
     borders = _el("w:pgBorders", **{"w:offsetFrom": "page"})
     for side in ("top", "left", "bottom", "right"):
-        borders.append(_el(f"w:{side}", **{"w:val": "single", "w:sz": size, "w:space": "24", "w:color": color}))
+        borders.append(_el(f"w:{side}", **{"w:val": val, "w:sz": str(size), "w:space": str(space), "w:color": color}))
     # pgBorders phải đứng sau pgMar/paperSrc và trước lnNumType/pgNumType/cols...
     anchor = sectpr.find(qn("w:pgMar"))
     if anchor is not None:
@@ -262,6 +269,7 @@ _LIST_FORMATS = {
     "number": ("decimal", ["%1.", "%2)", "%3."]),
     "roman": ("lowerRoman", ["%1.", "%2.", "%3."]),
     "alpha": ("lowerLetter", ["%1.", "%2.", "%3."]),
+    "bracket": ("decimal", ["[%1]", "[%2]", "[%3]"]),  # tài liệu tham khảo
 }
 
 
@@ -344,3 +352,36 @@ def set_outline_level(style, level: int) -> None:
         ppr.append(existing)
     existing.set(qn("w:val"), str(level))
     _reorder_ppr(ppr)
+
+
+def float_picture(run, x_emu: int, y_emu: int, behind: bool = True) -> None:
+    """Biến ảnh inline (vừa thêm bằng run.add_picture) thành ảnh trôi nổi định vị tuyệt đối theo trang,
+    nằm sau chữ - dùng cho hoa văn trang trí trang bìa."""
+    inline = run._element.find(".//" + qn("wp:inline"))
+    anchor = OxmlElement("wp:anchor")
+    for key, value in (("distT", "0"), ("distB", "0"), ("distL", "0"), ("distR", "0"), ("simplePos", "0"),
+                       ("relativeHeight", "251658240"), ("behindDoc", "1" if behind else "0"), ("locked", "0"),
+                       ("layoutInCell", "1"), ("allowOverlap", "1")):
+        anchor.set(key, value)  # thuộc tính của wp:anchor không có namespace
+    simple = OxmlElement("wp:simplePos")
+    simple.set("x", "0")
+    simple.set("y", "0")
+    anchor.append(simple)
+    for axis, value in (("H", x_emu), ("V", y_emu)):
+        pos = OxmlElement(f"wp:position{axis}")
+        pos.set("relativeFrom", "page")
+        off = OxmlElement("wp:posOffset")
+        off.text = str(int(value))
+        pos.append(off)
+        anchor.append(pos)
+    anchor.append(inline.find(qn("wp:extent")))
+    effect = OxmlElement("wp:effectExtent")
+    for k in ("l", "t", "r", "b"):
+        effect.set(k, "0")
+    anchor.append(effect)
+    anchor.append(OxmlElement("wp:wrapNone"))
+    for tag in ("wp:docPr", "wp:cNvGraphicFramePr", "a:graphic"):
+        child = inline.find(qn(tag))
+        if child is not None:
+            anchor.append(child)
+    inline.getparent().replace(inline, anchor)

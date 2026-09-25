@@ -26,7 +26,17 @@ flowchart LR
 ```
 
 Claude chỉ lo nội dung và cấu trúc; toàn bộ định dạng (font, lề, đánh số tiêu đề, mục lục, chú thích,
-header/footer) được áp theo style profile (`hcmus-clc` theo bản mẫu, `nd30-a4` cho báo cáo A4 doanh nghiệp).
+header/footer) được áp theo style profile:
+
+| Profile | Dùng cho |
+|---|---|
+| `hcmus-clc` | Báo cáo kiểu CLC HCMUS: Letter, TNR 14pt, tiêu đề xanh, đánh số `I. / 1. / 1.1.` |
+| `hcmus-fetel` | Báo cáo đồ án Khoa ĐT-VT HCMUS: A4, khung trang đôi xanh mọi trang, bìa logo + bảng thông tin, TNR 13pt, giãn dòng 1.5, đánh số theo chương `I. / 1.1. / 1.1.1.`, chú thích bảng đậm / hình nghiêng |
+| `nd30-a4` | Báo cáo A4 doanh nghiệp/hành chính: lề 3-2-2-2 cm, TNR 13pt |
+
+Hỗ trợ: trang bìa (logo, GVHD, thành viên, lớp), lời mở đầu, phần đầu tuỳ chọn (tóm tắt...), mục lục,
+danh mục hình, danh mục bảng, tiêu đề không đánh số (MỞ ĐẦU, CHỮ VIẾT TẮT...), bảng, hình, khối code,
+hộp ghi chú, tài liệu tham khảo `[1]`.
 
 ## Cài đặt
 
@@ -43,8 +53,9 @@ pip install markitdown-mcp   # tuỳ chọn: MCP đọc PDF/PPTX/XLSX
 $env:ANTHROPIC_API_KEY = "sk-ant-..."   # chỉ cần cho lệnh generate
 ```
 
-Số trang mục lục được điền bằng Microsoft Word (nếu có `pywin32`) hoặc LibreOffice; không có cả hai thì
-Word sẽ đề nghị cập nhật khi mở file.
+Số trang của mục lục, danh mục hình/bảng do **Microsoft Word** tính: trên Windows có `pywin32`, công cụ điều
+khiển Word cập nhật ngay; nếu không, khi mở file bằng Word hãy chọn **Yes** ở hộp thoại cập nhật field.
+Công cụ không dùng LibreOffice.
 
 ## Sử dụng
 
@@ -69,7 +80,8 @@ wordreport render examples/mang-may-tinh-do-an.json -o out/bao-cao-a4.docx --pro
 
 ### 3. Dùng trong Claude Desktop / Claude Code
 
-- **Claude Code:** mở thư mục dự án – file `.mcp.json` đã khai báo `word-report` và `markitdown`.
+- **Claude Code:** mở thư mục dự án – file `.mcp.json` đã khai báo `word-report`, `word` (MCP Microsoft Word)
+  và `markitdown`.
   Chép kho skill: `wordreport skills install --dest .claude/skills` (hoặc `~/.claude/skills`).
 - **Claude Desktop (Windows):** chép nội dung `examples/claude_desktop_config.windows.json` vào
   `%APPDATA%\Claude\claude_desktop_config.json`, sửa đường dẫn cho đúng máy, khởi động lại Claude Desktop.
@@ -95,6 +107,14 @@ Tương đương: `wordreport clean …` hoặc tool MCP `remove_watermarks`.
 wordreport lint "bao-cao-cu.docx"          # font, tiêu đề, chú thích, gạch đầu dòng gõ tay, chính tả, nhãn AI...
 wordreport inspect "bao-cao-cu.docx"       # xuất Markdown
 ```
+
+## MCP Microsoft Word (`word`)
+
+Dùng [Office-Word-MCP-Server](https://github.com/GongRzhe/Office-Word-MCP-Server) để sửa chi tiết file .docx
+sau khi dựng (thay chữ, định dạng ô bảng, gộp ô, chú thích cuối trang, bình luận, bảo vệ tài liệu) và để
+kiểm tra file (dàn ý, tìm chữ). Chạy bằng `uvx --from office-word-mcp-server word_mcp_server` (cần
+[uv](https://docs.astral.sh/uv/)); agent của `wordreport generate` tự kết nối (tắt bằng `--no-word-mcp`, đổi
+lệnh chạy bằng biến `WORDREPORT_WORD_MCP`). Quy tắc dùng nằm trong skill `word-mcp`.
 
 ## MCP server `word-report`
 
@@ -122,6 +142,7 @@ wordreport inspect "bao-cao-cu.docx"       # xuất Markdown
 | `references` | Tài liệu tham khảo |
 | `quality-check` | Lint và vòng lặp sửa lỗi |
 | `watermark-remover` | Xoá nhãn công cụ/AI khỏi file .docx |
+| `word-mcp` | Sửa chi tiết file .docx bằng MCP Microsoft Word |
 | `read-sources` | Đọc PDF/DOCX/PPTX/XLSX/URL qua markitdown (đổi `C:\...` → `file:///C:/...`) |
 | `data-analysis-report` | Báo cáo phân tích dữ liệu Python: pandas → bảng, matplotlib → hình |
 | `edit-existing-docx` | Chuẩn hoá lại một file Word có sẵn |
@@ -131,6 +152,6 @@ Thêm skill mới: tạo `skills/<ten-skill>/SKILL.md` với frontmatter `name` 
 
 ## Giới hạn
 
-- Số trang mục lục chính xác tuyệt đối khi có Microsoft Word; với LibreOffice là ước lượng.
-- Chưa hỗ trợ phụ lục đánh số riêng, danh mục hình/bảng, bảng gộp ô, khổ ngang từng trang.
+- Không có Microsoft Word thì mục lục chưa có số trang cho tới khi mở file bằng Word và cập nhật field.
+- Chưa hỗ trợ phụ lục đánh số riêng, bảng gộp ô, khổ ngang từng trang, công thức toán dạng equation.
 - Logo trường không kèm theo repo; đặt `meta.logo_path` tới file logo của bạn.
