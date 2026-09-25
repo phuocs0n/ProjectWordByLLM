@@ -10,7 +10,8 @@ def test_mcp_end_to_end(tmp_path):
     async def scenario():
         async with Client(server) as client:
             names = {t.name for t in (await client.list_tools()).tools}
-            assert {"create_report", "add_blocks", "save_report", "lint_document", "load_skill"} <= names
+            assert {"create_report", "add_blocks", "save_report", "lint_document", "load_skill", "remove_watermarks"} <= names
+            assert not any("pdf" in n for n in names), "MCP chỉ xuất .docx"
 
             created = await client.call_tool("create_report", {"meta": {"subject": "Kiểm thử", "class_code": "X1"}})
             doc_id = created.structured_content["doc_id"]
@@ -33,6 +34,8 @@ def test_mcp_end_to_end(tmp_path):
             saved = await client.call_tool("save_report", {"doc_id": doc_id, "output_path": str(out), "update_toc_pages": False})
             result = saved.structured_content
             assert out.exists() and (tmp_path / "mcp.spec.json").exists()
+            assert not list(tmp_path.glob("*.pdf"))
+            assert result["watermarks_removed"] is not None
             assert result["lint"]["errors"] == 0 and result["lint"]["warnings"] == 0
 
             reloaded = await client.call_tool("load_spec", {"spec_path": str(tmp_path / "mcp.spec.json")})

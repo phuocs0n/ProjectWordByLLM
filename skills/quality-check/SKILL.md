@@ -21,6 +21,7 @@ description: Kiểm tra chất lượng báo cáo Word sau khi lưu (lint font, 
 | manual-bullet | Gạch đầu dòng gõ tay | Chuyển sang `list` |
 | font-mismatch | Font lạ | Render lại theo profile |
 | typo | Lỗi chính tả phổ biến | Sửa chữ |
+| ai-label | Còn nhãn trình tạo/AI trong metadata hoặc nội dung | `remove_watermarks(path)` (skill `watermark-remover`) |
 | empty-paragraphs, double-space, long-paragraph | Trình bày | Xoá / tách đoạn |
 
 Checklist thủ công thêm: thông tin bìa đúng, không còn `figure_placeholder` khi nộp bản cuối,

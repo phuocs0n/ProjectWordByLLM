@@ -5,6 +5,7 @@ from wordreport.numbering import HeadingNumberer, to_roman
 from wordreport.renderer import DocxRenderer
 from wordreport.spec import ReportSpec
 from wordreport.style_profile import list_profiles, load_profile
+from wordreport.watermark_remover import find_watermarks
 
 
 def test_roman_and_heading_numbers():
@@ -48,6 +49,12 @@ def test_render_example(tmp_path, example_spec):
 
     issues = [i for i in lint_docx(out) if i.severity != "info"]
     assert issues == []
+
+    # watermark-remover chạy mặc định: không còn nhãn trình tạo/AI, tác giả là thành viên nhóm
+    assert find_watermarks(out) == []
+    props = doc.core_properties
+    assert props.author == "Nguyễn Minh An, Lê Thu Bình" and props.comments == ""
+    assert props.created.year >= 2024
 
 
 def test_inline_markup_and_missing_image(tmp_path):

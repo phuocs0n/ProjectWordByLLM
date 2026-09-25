@@ -55,6 +55,6 @@ Số đo lấy tự động bằng PyMuPDF (vị trí, font, cỡ chữ, màu c�
 ## 4. Kết quả tái dựng
 
 `examples/mang-may-tinh-do-an.json` là bản tái dựng nội dung báo cáo mẫu (tên người đã thay bằng tên giả).
-`wordreport render examples/mang-may-tinh-do-an.json --pdf` tạo file 9 trang: bìa có khung, lời mở đầu,
+`wordreport render examples/mang-may-tinh-do-an.json` tạo file `.docx` 9 trang: bìa có khung, lời mở đầu,
 mục lục có số trang, 3 bảng + 4 hình có chú thích, 2 khối lệnh, 2 hộp ghi chú, tài liệu tham khảo có link;
-lint 0 lỗi/0 cảnh báo; qua kiểm tra XSD của OOXML.
+lint 0 lỗi/0 cảnh báo; qua kiểm tra XSD của OOXML; metadata không còn nhãn công cụ/AI (watermark-remover).

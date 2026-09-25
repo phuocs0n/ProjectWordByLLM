@@ -22,11 +22,12 @@ from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import TypeAdapter
 
 from .inspector import lint_report, outline as docx_outline, read_source
-from .postprocess import export_pdf, update_toc
+from .postprocess import finalize
 from .renderer import DocxRenderer
 from .skills import SkillLibrary
 from .spec import Block, Reference, ReportMeta, ReportSpec
 from .style_profile import describe_profiles
+from .watermark_remover import find_watermarks, remove_watermarks as _remove_watermarks
 
 INSTRUCTIONS = """\
 Bộ công cụ soạn thảo & định dạng báo cáo Microsoft Word (.docx) chuyên nghiệp.
@@ -280,9 +281,9 @@ def load_spec(spec_path: str) -> dict[str, Any]:
 
 
 @tool
-def save_report(doc_id: str, output_path: str, update_toc_pages: bool = True,
-                pdf: bool = False) -> dict[str, Any]:
-    """Render báo cáo ra .docx (và .spec.json cạnh bên), điền số trang mục lục, lint, tuỳ chọn xuất PDF."""
+def save_report(doc_id: str, output_path: str, update_toc_pages: bool = True) -> dict[str, Any]:
+    """Render báo cáo ra file .docx (kèm .spec.json để chỉnh sửa lại), điền số trang mục lục,
+    xoá nhãn trình tạo/AI trong metadata, rồi lint. Chỉ xuất .docx."""
     session = _session(doc_id)
     out = Path(output_path)
     if out.suffix.lower() != ".docx":
@@ -291,16 +292,8 @@ def save_report(doc_id: str, output_path: str, update_toc_pages: bool = True,
     spec_file = out.with_suffix(".spec.json")
     spec_file.write_text(session.spec.model_dump_json(indent=2), encoding="utf-8")
     result: dict[str, Any] = {"docx": str(out.resolve()), "spec": str(spec_file.resolve())}
-    if update_toc_pages and session.spec.include_toc:
-        try:
-            result["toc"] = update_toc(out)
-        except Exception as err:  # không làm hỏng việc lưu vì bước phụ
-            result["toc"] = f"lỗi cập nhật mục lục: {err}"
-    if pdf:
-        try:
-            result["pdf"] = str(export_pdf(out))
-        except Exception as err:
-            result["pdf"] = f"lỗi xuất PDF: {err}"
+    toc = update_toc_pages and session.spec.include_toc
+    result.update(finalize(out, toc=toc, author=DocxRenderer.author(session.spec)))
     lint = lint_report(out, session.spec.profile)
     result["lint"] = {k: lint[k] for k in ("errors", "warnings", "infos")}
     result["lint_issues"] = lint["issues"][:20]
@@ -337,9 +330,13 @@ def lint_document(path: str, profile: str = "hcmus-clc") -> dict[str, Any]:
 
 
 @tool
-def export_to_pdf(path: str) -> str:
-    """Xuất .docx sang PDF bằng LibreOffice."""
-    return str(export_pdf(path))
+def remove_watermarks(path: str, output_path: str = "", author: str = "") -> dict[str, Any]:
+    """watermark-remover: xoá nhãn công cụ/AI khỏi một file .docx bất kỳ - metadata (mô tả "Tạo bởi…",
+    tên thư viện, ứng dụng, template, ngày tạo cũ), ảnh thu nhỏ template, và các đoạn chỉ gồm nhãn
+    kiểu "Generated with …". Nội dung báo cáo giữ nguyên. output_path trống = ghi đè file gốc."""
+    changes = _remove_watermarks(path, output_path or None, author or None)
+    target = output_path or path
+    return {"file": str(Path(target).resolve()), "changes": changes, "remaining": find_watermarks(target)}
 
 
 def main() -> None:
