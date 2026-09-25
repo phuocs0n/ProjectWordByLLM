@@ -178,6 +178,7 @@ def remove_watermarks(src: str | Path, dst: str | Path | None = None, author: st
         _drop_thumbnail(files, report)
 
     dst.parent.mkdir(parents=True, exist_ok=True)
+    mode = src.stat().st_mode & 0o777  # file tạm được tạo với quyền 0600 -> trả lại quyền của file gốc
     with tempfile.NamedTemporaryFile(delete=False, suffix=".docx", dir=dst.parent) as tmp:
         tmp_path = Path(tmp.name)
     try:
@@ -186,6 +187,7 @@ def remove_watermarks(src: str | Path, dst: str | Path | None = None, author: st
             order = sorted(files, key=lambda n: (n != "[Content_Types].xml", n))
             for name in order:
                 zout.writestr(name, files[name])
+        tmp_path.chmod(mode)
         shutil.move(str(tmp_path), dst)
     finally:
         tmp_path.unlink(missing_ok=True)
