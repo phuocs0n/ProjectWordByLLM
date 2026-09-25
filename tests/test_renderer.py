@@ -121,7 +121,10 @@ def test_chapter_numbering_front_matter_and_lists_of_figures(tmp_path):
     assert lists == ["Hình 2.1. Hình một", "Hình 2.2. Hình hai", "Bảng 1.1. Bảng một"]
     assert 'TOC \\h \\z \\c "Hình"' in doc.element.body.xml
     assert doc.sections[2].header.paragraphs[0].text == ""  # profile không có header
-    cover = "\n".join(p.text for p in doc.paragraphs[:12]) + doc.tables[0]._tbl.xml
+    cover = "".join(t._tbl.xml for t in doc.tables[:2])  # bìa banner: bảng tên trường/khoa + bảng thông tin
     assert "KHOA ĐIỆN TỬ - VIỄN THÔNG" in cover and "23DTV" in cover
+    # khung trang đôi ở mọi section, không in số trang
+    assert all("thickThinSmallGap" in sec._sectPr.xml for sec in doc.sections)
+    assert "PAGE" not in doc.sections[2].footer._element.xml
     # không có đoạn ngắt trang rỗng: sang trang bằng "page break before" của tiêu đề
     assert not any(p.text == "" and "w:br" in p._p.xml and 'w:type="page"' in p._p.xml for p in doc.paragraphs)

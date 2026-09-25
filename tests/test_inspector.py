@@ -1,7 +1,6 @@
 from docx import Document
 
 from wordreport.inspector import docx_to_markdown, lint_docx
-from wordreport.postprocess import locate_headings
 
 
 def _bad_doc(path):
@@ -33,16 +32,3 @@ def test_docx_to_markdown(tmp_path):
     _bad_doc(path)
     md = docx_to_markdown(path)
     assert "# I. Giới thiệu" in md and "### Chi tiết" in md and "| x |" in md
-
-
-def test_locate_headings_skips_toc_page():
-    pages = [
-        "BÌA",
-        "LỜI MỞ ĐẦU\nnội dung",
-        "MỤC LỤC\nLỜI MỞ ĐẦU..........2\nI. Giới thiệu chung..........4\n1. Thành viên..........4\n",
-        "Khoa CNTT   22CLC03\nI. Giới thiệu chung\n1. Thành viên\nbảng",
-        "II. Nội dung rất dài và tiêu đề bị\nxuống dòng ở đây\n",
-    ]
-    entries = ["LỜI MỞ ĐẦU", "MỤC LỤC", "I. Giới thiệu chung", "1. Thành viên",
-               "II. Nội dung rất dài và tiêu đề bị xuống dòng ở đây", "Không có"]
-    assert locate_headings(entries, pages) == [2, 3, 4, 4, 5, None]

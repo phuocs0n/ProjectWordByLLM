@@ -50,7 +50,7 @@ Số đo lấy tự động bằng PyMuPDF (vị trí, font, cỡ chữ, màu c�
 | Văn nói: "vô Physical", "bấm lệnh" | Skill `academic-writing-vn` |
 | Tài liệu tham khảo là URL trần, không mô tả | Block `references` có mô tả + hyperlink, skill `references` |
 | Bìa lặp 2 lần, trang trống cuối | Bìa dựng một lần từ `meta`; không chèn trang trống |
-| Mục lục phải cập nhật tay | Field TOC thật + tự điền số trang (Word COM hoặc LibreOffice) |
+| Mục lục phải cập nhật tay | Field TOC thật + tự điền số trang (Microsoft Word) |
 
 ## 4. Kết quả tái dựng
 

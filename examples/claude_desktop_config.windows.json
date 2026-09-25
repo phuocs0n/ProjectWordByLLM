@@ -10,6 +10,17 @@
     "markitdown": {
       "command": "C:\\Projects\\ProjectWordByLLM\\.venv\\Scripts\\markitdown-mcp.exe",
       "args": []
+    },
+    "word": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "office-word-mcp-server",
+        "word_mcp_server"
+      ],
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      }
     }
   }
 }

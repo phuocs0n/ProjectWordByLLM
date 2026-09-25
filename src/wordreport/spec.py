@@ -21,6 +21,16 @@ class Member(BaseModel):
     email: str = Field(default="")
 
 
+class CoverImage(BaseModel):
+    """Ảnh trang trí trôi nổi trên trang bìa (hoa văn góc, đường viền), định vị tuyệt đối theo trang."""
+
+    path: str
+    x_cm: float = Field(description="Khoảng cách từ mép trái trang")
+    y_cm: float = Field(description="Khoảng cách từ mép trên trang")
+    width_cm: float
+    height_cm: float = Field(default=0, description="0 = giữ tỉ lệ ảnh")
+
+
 class ReportMeta(BaseModel):
     """Thông tin trang bìa và header/footer."""
 
@@ -30,12 +40,14 @@ class ReportMeta(BaseModel):
     report_type: str = Field(default="BÁO CÁO", description="Ví dụ: BÁO CÁO ĐỒ ÁN HỌC PHẦN")
     subject: str = Field(default="", description="Tên học phần / dự án, ví dụ: MẠNG MÁY TÍNH")
     topic: str = Field(default="", description="Đề tài (không bắt buộc)")
+    subtitle: str = Field(default="", description="Dòng phụ dưới đề tài, ví dụ tên tiếng Anh")
     instructors: list[str] = Field(default_factory=list, description="Giảng viên hướng dẫn")
     members: list[Member] = Field(default_factory=list, description="Thành viên nhóm")
     class_code: str = Field(default="", description="Mã lớp - hiển thị ở header phải")
     city: str = Field(default="TP. Hồ Chí Minh")
     year: str = Field(default="")
     logo_path: str | None = Field(default=None, description="Đường dẫn logo trường (png/jpg), có thể bỏ trống")
+    cover_images: list[CoverImage] = Field(default_factory=list, description="Ảnh trang trí trôi nổi trên bìa")
 
 
 # ---------------------------------------------------------------------------

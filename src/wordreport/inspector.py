@@ -152,7 +152,7 @@ def lint_docx(path: str | Path, profile: str = "hcmus-clc") -> list[LintIssue]:
     if "TOC \\o" not in body_xml and " TOC " not in body_xml:
         issues.append(LintIssue("warning", "no-toc", "Tài liệu chưa có mục lục tự động (field TOC)."))
     has_page = any(" PAGE " in s.footer._element.xml or "PAGE" in s.footer._element.xml for s in document.sections)
-    if not has_page:
+    if not has_page and prof.get("footer", {}).get("page_number", "center") != "none":
         issues.append(LintIssue("warning", "no-page-number", "Footer chưa có số trang tự động (field PAGE)."))
 
     for label in find_watermarks(path):
@@ -162,13 +162,16 @@ def lint_docx(path: str | Path, profile: str = "hcmus-clc") -> list[LintIssue]:
     empty_run = 0
     prev_level = 0
     prev_numbers: dict[int, str] = {}
-    in_cover = True  # section đầu tiên (trang bìa): logo không cần chú thích
+    # section đầu tiên của tài liệu nhiều section là trang bìa: logo/bảng thông tin không cần chú thích
+    in_cover = len(document.sections) > 1
     for idx, item in enumerate(items):
         loc = f"khối #{idx}"
         cover_item = in_cover
         if isinstance(item, Paragraph) and item._p.pPr is not None and item._p.pPr.find(qn("w:sectPr")) is not None:
             in_cover = False
         if isinstance(item, Table):
+            if cover_item:
+                continue  # bảng bố cục/thông tin trang bìa
             borders = item._tbl.tblPr.find(qn("w:tblBorders"))
             if borders is not None and borders.find(qn("w:top")) is not None and borders.find(qn("w:top")).get(qn("w:val")) == "nil":
                 continue  # bảng bố cục không viền (ví dụ khối thông tin trang bìa)

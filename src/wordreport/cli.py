@@ -80,7 +80,8 @@ def cmd_generate(args) -> None:
     else:
         from .agent import run_agent
 
-        answer = asyncio.run(run_agent(request, out, use_markitdown=args.markitdown, **options))
+        answer = asyncio.run(run_agent(request, out, use_markitdown=args.markitdown,
+                                       use_word_mcp=not args.no_word_mcp, **options))
         print("\n" + answer)
         if args.pdf and out.exists():
             print(f"PDF: {export_pdf(out)}")
@@ -158,7 +159,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("spec")
     p.add_argument("-o", "--output")
     p.add_argument("--profile", help="Ghi đè style profile trong spec")
-    p.add_argument("--pdf", action="store_true", help="Xuất thêm PDF (mặc định chỉ xuất .docx; cần LibreOffice)")
+    p.add_argument("--pdf", action="store_true", help="Xuất thêm PDF (mặc định chỉ xuất .docx; cần Microsoft Word trên Windows)")
     p.add_argument("--no-toc-update", action="store_true", help="Không điền số trang mục lục")
     p.set_defaults(func=cmd_render)
 
@@ -173,6 +174,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--model", help="Model Claude (mặc định claude-opus-5 hoặc biến WORDREPORT_MODEL)")
     p.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"])
     p.add_argument("--markitdown", action="store_true", help="Kết nối thêm MCP markitdown (markitdown-mcp)")
+    p.add_argument("--no-word-mcp", action="store_true",
+                   help="Không kết nối MCP Microsoft Word (Office-Word-MCP-Server, mặc định bật)")
     p.add_argument("--pdf", action="store_true", help="Xuất thêm PDF (mặc định chỉ xuất .docx)")
     p.set_defaults(func=cmd_generate)
 
