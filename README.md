@@ -32,11 +32,12 @@ header/footer) được áp theo style profile:
 |---|---|
 | `hcmus-clc` | Báo cáo kiểu CLC HCMUS: Letter, TNR 14pt, tiêu đề xanh, đánh số `I. / 1. / 1.1.` |
 | `hcmus-fetel` | Báo cáo đồ án Khoa ĐT-VT HCMUS: A4, khung trang đôi xanh mọi trang, bìa logo + bảng thông tin, TNR 13pt, giãn dòng 1.5, đánh số theo chương `I. / 1.1. / 1.1.1.`, chú thích bảng đậm / hình nghiêng |
+| `hcmus-fetel-ldo` | Báo cáo Khoa ĐT-VT kiểu "CHƯƠNG 1:": Letter, TNR 12pt, tiêu đề xanh #0F4761, chú thích "Hình 1:" đánh số liên tục và chú thích bảng dưới bảng, bìa khung đôi đen + logo mờ + bảng thành viên, số trang từ 1 sau bìa |
 | `nd30-a4` | Báo cáo A4 doanh nghiệp/hành chính: lề 3-2-2-2 cm, TNR 13pt |
 
 Hỗ trợ: trang bìa (logo, GVHD, thành viên, lớp), lời mở đầu, phần đầu tuỳ chọn (tóm tắt...), mục lục,
 danh mục hình, danh mục bảng, tiêu đề không đánh số (MỞ ĐẦU, CHỮ VIẾT TẮT...), bảng, hình, khối code,
-hộp ghi chú, tài liệu tham khảo `[1]`.
+hộp ghi chú, tài liệu tham khảo `[1]` hoặc `1.`, chỉ số dưới/trên trong văn bản (`V~OUT~`, `x^2^`).
 
 ## Cài đặt
 

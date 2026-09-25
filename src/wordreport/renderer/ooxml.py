@@ -223,6 +223,13 @@ def page_border(section, color: str = "000000", size: str = "12", val: str = "si
         sectpr.append(borders)
 
 
+def clear_page_number_start(section) -> None:
+    """Section mới sao chép sectPr (kể cả 'bắt đầu đánh số từ N') của section trước -> xoá để đánh số liên tục."""
+    pg = section._sectPr.find(qn("w:pgNumType"))
+    if pg is not None and pg.get(qn("w:start")) is not None:
+        del pg.attrib[qn("w:start")]
+
+
 def page_number_start(section, start: int) -> None:
     sectpr = section._sectPr
     pg = sectpr.find(qn("w:pgNumType"))

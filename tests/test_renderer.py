@@ -128,3 +128,38 @@ def test_chapter_numbering_front_matter_and_lists_of_figures(tmp_path):
     assert "PAGE" not in doc.sections[2].footer._element.xml
     # không có đoạn ngắt trang rỗng: sang trang bằng "page break before" của tiêu đề
     assert not any(p.text == "" and "w:br" in p._p.xml and 'w:type="page"' in p._p.xml for p in doc.paragraphs)
+
+
+def test_chapter_label_global_captions_and_table_caption_below(tmp_path):
+    spec = ReportSpec.model_validate({
+        "profile": "hcmus-fetel-ldo",
+        "meta": {"topic": "Dòng một\nDòng hai", "members": [{"name": "A", "student_id": "1"}], "year": "2026"},
+        "body": [
+            {"type": "heading", "level": 1, "text": "GIỚI THIỆU"},
+            {"type": "heading", "level": 2, "text": "Khái niệm"},
+            {"type": "paragraph", "text": "V~DROP~ = x^2^"},
+            {"type": "figure_placeholder", "caption": "Hình A"},
+            {"type": "heading", "level": 1, "text": "THIẾT KẾ"},
+            {"type": "table", "columns": ["a", "b"], "rows": [["1", "2"]], "caption": "Bảng A"},
+            {"type": "figure_placeholder", "caption": "Hình B"},
+        ],
+    })
+    out = DocxRenderer(spec.profile).save(spec, tmp_path / "l.docx")
+    doc = Document(str(out))
+    heads = [h["text"] for h in outline(out)]
+    assert "CHƯƠNG 1: GIỚI THIỆU" in heads and "1.1. Khái niệm" in heads and "CHƯƠNG 2: THIẾT KẾ" in heads
+    toc = [p.text for p in doc.paragraphs if p.style.name.startswith("toc")]
+    assert not any(t.startswith("MỤC LỤC") for t in toc)  # include_self: false
+    captions = [p.text for p in doc.paragraphs if p.style.name == "Caption"]
+    assert captions == ["Hình 1: Hình A", "Bảng 1: Bảng A", "Hình 2: Hình B"]  # đánh số liên tục cả bài
+    body = doc.element.body
+    table_idx = list(body).index(doc.tables[-1]._tbl)
+    caption_p = next(p for p in doc.paragraphs if p.text == "Bảng 1: Bảng A")
+    assert list(body).index(caption_p._p) == table_idx + 1  # chú thích bảng nằm dưới bảng
+    eq = next(p for p in doc.paragraphs if p.text == "VDROP = x2")
+    runs = {r.text: r for r in eq.runs}
+    assert runs["DROP"].font.subscript and runs["2"].font.superscript
+    front, main = doc.sections[1], doc.sections[2]
+    assert 'w:start="1"' in front._sectPr.xml and 'w:start=' not in main._sectPr.xml
+    assert "thinThickSmallGap" in doc.sections[0]._sectPr.xml and "pgBorders" not in main._sectPr.xml
+    assert doc.core_properties.subject == "Dòng một Dòng hai"
