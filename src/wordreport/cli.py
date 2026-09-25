@@ -18,6 +18,7 @@ import shutil
 import sys
 from pathlib import Path
 
+from .barem import check_spec
 from .inspector import docx_to_markdown, lint_report, outline
 from .postprocess import export_pdf, finalize
 from .renderer import DocxRenderer
@@ -34,6 +35,13 @@ def _finish(out: Path, spec: ReportSpec, pdf: bool, toc: bool) -> None:
     print(f"Watermark-remover: đã xoá nhãn trình tạo/AI ({len(result['watermarks_removed'])} thay đổi)")
     lint = lint_report(out, spec.profile)
     print(f"Lint: {lint['errors']} lỗi, {lint['warnings']} cảnh báo, {lint['infos']} gợi ý")
+    barem = check_spec(spec)
+    if barem:
+        print(f"Barem: {len(barem)} mục cần xem")
+        for issue in barem:
+            print(f"  [{issue.severity}] {issue.message}")
+    else:
+        print("Barem: đủ các phần bắt buộc")
     for issue in lint["issues"]:
         if issue["severity"] != "info":
             print(f"  [{issue['severity']}] {issue['rule']}: {issue['message']}")

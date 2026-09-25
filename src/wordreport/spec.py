@@ -57,11 +57,15 @@ class ReportMeta(BaseModel):
 #   **đậm**, *nghiêng*, `mã`, [chữ](https://link)
 
 
+LABEL_DESC = "Nhãn (không bắt buộc) để tham chiếu chéo trong văn bản bằng [[nhãn]]"
+
+
 class HeadingBlock(BaseModel):
     type: Literal["heading"]
-    level: Literal[1, 2, 3] = Field(description="1 = chương (I.), 2 = mục (1.), 3 = tiểu mục (1.1.)")
+    level: Literal[1, 2, 3, 4] = Field(description="1 = chương, 2 = mục, 3 = tiểu mục, 4 = tiểu mục con")
     text: str = Field(description="Tiêu đề KHÔNG kèm số thứ tự - renderer tự đánh số")
     numbered: bool = Field(default=True, description="False cho mục không đánh số: TÓM TẮT, MỞ ĐẦU, CHỮ VIẾT TẮT, BẢNG PHÂN CÔNG...")
+    label: str = Field(default="", description=LABEL_DESC)
 
 
 class ParagraphBlock(BaseModel):
@@ -83,6 +87,7 @@ class TableBlock(BaseModel):
     rows: list[list[str]] = Field(description="Mỗi ô có thể chứa nhiều dòng phân tách bằng \\n; dòng bắt đầu '- ' thành gạch đầu dòng")
     caption: str = Field(default="", description="Chú thích bảng (renderer tự thêm 'Bảng N:')")
     col_widths: list[float] = Field(default_factory=list, description="Độ rộng cột theo tỉ lệ tương đối, ví dụ [1, 3, 5]")
+    label: str = Field(default="", description=LABEL_DESC)
 
 
 class ImageBlock(BaseModel):
@@ -90,6 +95,7 @@ class ImageBlock(BaseModel):
     path: str
     caption: str = ""
     width_cm: float = Field(default=14.0)
+    label: str = Field(default="", description=LABEL_DESC)
 
 
 class FigurePlaceholderBlock(BaseModel):
@@ -98,6 +104,7 @@ class FigurePlaceholderBlock(BaseModel):
     type: Literal["figure_placeholder"]
     caption: str
     description: str = Field(default="", description="Mô tả ảnh cần chụp/chèn")
+    label: str = Field(default="", description=LABEL_DESC)
 
 
 class CodeBlock(BaseModel):
@@ -140,6 +147,14 @@ Block = Annotated[
 ]
 
 
+class Assignment(BaseModel):
+    """Một dòng của 'Bảng phân công công việc' trong barem."""
+
+    member: str = Field(description="Họ và tên người phụ trách")
+    tasks: list[str] = Field(default_factory=list, description="Các nhiệm vụ được giao")
+    completion: str = Field(default="", description="Mức độ hoàn thành, ví dụ 100%")
+
+
 class Reference(BaseModel):
     text: str = Field(description="Mô tả tài liệu: tác giả, tên, nguồn, năm")
     url: str = ""
@@ -150,11 +165,16 @@ class ReportSpec(BaseModel):
     meta: ReportMeta = Field(default_factory=ReportMeta)
     preface: list[str] = Field(default_factory=list, description="Các đoạn của LỜI MỞ ĐẦU; để trống nếu không cần")
     preface_title: str = Field(default="", description="Đổi tiêu đề lời mở đầu, ví dụ 'LỜI NÓI ĐẦU'; trống = theo profile")
-    front_matter: list[Block] = Field(default_factory=list, description="Phần đặt giữa lời mở đầu và MỤC LỤC, ví dụ TÓM TẮT")
+    front_matter: list[Block] = Field(default_factory=list, description="Phần đặt giữa lời mở đầu và MỤC LỤC (không dùng với barem)")
+    assignments: list[Assignment] = Field(default_factory=list, description="Bảng phân công công việc (barem mục I.2)")
+    introduction: list[Block] = Field(default_factory=list,
+                                      description="Nội dung thêm của mục I. Giới thiệu chung (sau thành viên và phân công); "
+                                                  "tiêu đề cấp 1 ở đây thành mục 3., 4. ...")
     include_toc: bool = True
     list_of_figures: bool = Field(default=False, description="Thêm DANH MỤC HÌNH tự động sau mục lục")
     list_of_tables: bool = Field(default=False, description="Thêm DANH MỤC BẢNG tự động sau mục lục")
-    body: list[Block] = Field(default_factory=list)
+    body: list[Block] = Field(default_factory=list,
+                              description="Các chương nội dung (tiêu đề cấp 1). Với barem, cả phần này nằm trong 'II. Nội dung'")
     references: list[Reference] = Field(default_factory=list)
     references_title: str = Field(default="", description="Đổi tiêu đề tài liệu tham khảo; trống = theo profile")
     references_numbered: bool | None = Field(default=None, description="Tiêu đề tài liệu tham khảo có đánh số chương hay không; null = theo profile")

@@ -29,7 +29,10 @@ PLANNER_SKILLS = [
 
 SYSTEM = """\
 Bạn là chuyên gia soạn thảo báo cáo Microsoft Word bằng tiếng Việt. Nhiệm vụ: chuyển yêu cầu,
-ghi chú và tài liệu nguồn của người dùng thành một ReportSpec JSON hoàn chỉnh. Một renderer tất định
+ghi chú và tài liệu nguồn của người dùng thành một ReportSpec JSON hoàn chỉnh THEO BAREM CHUẨN:
+meta (bìa + members), preface (LỜI MỞ ĐẦU), assignments (bảng phân công), introduction (mục giới thiệu
+thêm, tiêu đề cấp 1), body (các chương nội dung, tiêu đề cấp 1), references. Renderer tự dựng
+"I. Giới thiệu chung" và "II. Nội dung"; không sao chép bố cục/định dạng của tài liệu nguồn. Một renderer tất định
 sẽ biến ReportSpec thành file .docx theo style profile, nên bạn chỉ lo NỘI DUNG và CẤU TRÚC:
 không tự đánh số tiêu đề, không gõ tay gạch đầu dòng, không vẽ mục lục.
 

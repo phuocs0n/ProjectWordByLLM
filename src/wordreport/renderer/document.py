@@ -53,7 +53,9 @@ CODE_STYLE = "Code Block"
 CAPTION_STYLE = "Caption"
 
 # **đậm**, *nghiêng*, `mã`, [chữ](url)
-_INLINE = re.compile(r"(\*\*.+?\*\*|\*[^*]+?\*|`[^`]+?`|\[[^\]]+?\]\([^)]+?\))")
+# **đậm**, *nghiêng*, `mã`, [chữ](url), ~chỉ số dưới~, ^chỉ số trên^
+_REF = re.compile(r"\[\[([\w\-.:]+)\]\]")  # [[nhãn]] -> "Bảng 9", "Hình 19", "2.5.1"
+_INLINE = re.compile(r"(\*\*.+?\*\*|\*[^*]+?\*|`[^`]+?`|\[[^\]]+?\]\([^)]+?\)|~[^~\s][^~]*?~|\^[^^\s][^^]*?\^)")
 
 NOTE_LABELS = {"note": "Lưu ý: ", "tip": "Mẹo: ", "warning": "Cảnh báo: "}
 NOTE_COLORS = {"note": ("2F5496", "EAF1FB"), "tip": ("2E7D32", "EDF7EE"), "warning": ("C00000", "FDECEA")}
@@ -68,11 +70,11 @@ class DocxRenderer:
 
     # ------------------------------------------------------------------ public
 
-    def render(self, spec: ReportSpec):
-        doc = Document()
-        self.doc = doc
-        self._pending_break = False
+    def _prepare(self, spec: ReportSpec) -> None:
+        """Tính mọi thứ phụ thuộc vào spec trước khi dựng: khung barem, đánh số, nhãn tham chiếu."""
         self.scheme = self.p.get("heading_numbering", "section")
+        # caption_numbering: chapter ("Hình 2.3") hoặc global ("Hình 7"); mặc định theo heading_numbering
+        self.caption_scheme = "chapter" if self.p.get("caption_numbering", self.scheme) == "chapter" else "section"
         self.labels = dict(self.p["labels"])
         if spec.preface_title:
             self.labels["preface"] = spec.preface_title
@@ -80,7 +82,20 @@ class DocxRenderer:
             self.labels["references"] = spec.references_title
         self.references_numbered = (self.p.get("references_numbered", False)
                                     if spec.references_numbered is None else spec.references_numbered)
-        self.counter = CaptionCounter(self.scheme)
+        self.body_blocks = self._effective_body(spec)
+        self.captions, self.refs = self._scan()
+        self.counter = CaptionCounter(self.caption_scheme)
+
+    def outline(self, spec: ReportSpec) -> list[tuple[int, str]]:
+        """Dàn ý thực tế sẽ được dựng (đã áp khung barem và đánh số) - không tạo file."""
+        self._prepare(spec)
+        return self._toc_entries(spec, max_level=4)
+
+    def render(self, spec: ReportSpec):
+        doc = Document()
+        self.doc = doc
+        self._pending_break = False
+        self._prepare(spec)
         self._setup_styles()
         self.numbering = ooxml.NumberingManager(doc, self.font)
 
@@ -93,8 +108,10 @@ class DocxRenderer:
         self._setup_page(front)
         self._page_border(front, cover=False)
         self._header_footer(front, spec, with_header=False)
+        if self.p["page"].get("number_from_front"):
+            ooxml.page_number_start(front, 1)  # bìa không đánh số, trang sau bìa là trang 1
         toc_entries = self._toc_entries(spec)
-        captions = self._caption_entries(spec)
+        captions = self.captions
         started = False
 
         def new_page() -> None:
@@ -114,10 +131,16 @@ class DocxRenderer:
             if not (isinstance(first, HeadingBlock) and first.level == 1):
                 new_page()
                 self._flush_break()
-            started = self._blocks(spec.front_matter, HeadingNumberer(self.scheme), page_started=started)
+            started = self._blocks(spec.front_matter, self._numberer(), page_started=started)
         if spec.include_toc:
             new_page()
-            self._front_heading(self.labels["toc"])
+            toc_title = self._heading_para(self.labels["toc"], FRONT_STYLE)
+            title_cfg = self.p.get("toc", {}).get("title")
+            if title_cfg:
+                toc_title.alignment = ALIGN[title_cfg.get("align", "center")]
+                for run in toc_title.runs:
+                    ooxml.set_run_font(run, self.font, title_cfg.get("size_pt", 20))
+                    run.font.color.rgb = ooxml.hex_color(title_cfg.get("color", "000000"))
             self._toc(toc_entries, ' TOC \\o "1-3" \\h \\z \\u ', "toc")
             self._divider()
         for flag, kind, key in ((spec.list_of_figures, "figure", "lof"), (spec.list_of_tables, "table", "lot")):
@@ -128,6 +151,7 @@ class DocxRenderer:
                 self._toc([(0, text) for text in captions[kind]], f' TOC \\h \\z \\c "{label}" ', "table of figures")
 
         body = doc.add_section(WD_SECTION.NEW_PAGE)
+        ooxml.clear_page_number_start(body)
         self._setup_page(body)
         self._page_border(body, cover=False)
         self._header_footer(body, spec, with_header=True)
@@ -135,8 +159,8 @@ class DocxRenderer:
 
         ooxml.enable_update_fields_on_open(doc)
         props = doc.core_properties
-        props.title = " - ".join(x for x in (spec.meta.report_type, spec.meta.subject) if x)
-        props.subject = spec.meta.topic
+        props.title = " - ".join(" ".join(x.split()) for x in (spec.meta.report_type, spec.meta.subject) if x)
+        props.subject = " ".join(spec.meta.topic.split())  # tên đề tài có thể xuống dòng trên bìa
         props.author = self.author(spec)
         props.comments = ""
         return doc
@@ -193,8 +217,8 @@ class DocxRenderer:
         pf.space_before = Pt(0)
 
         head = self.p["headings"]
-        for level in (1, 2, 3):
-            cfg = {"color": head["color"], **head[f"level{level}"]}
+        for level in (1, 2, 3, 4):
+            cfg = {"color": head["color"], **head.get("level3", {}), **(head.get(f"level{level}") or {})}
             style = styles[f"Heading {level}"]
             ooxml.set_style_font(style, self.font, cfg["size_pt"])
             style.font.bold = cfg.get("bold", True)
@@ -266,6 +290,7 @@ class DocxRenderer:
     def _inline(self, paragraph, text: str, size_pt: float | None = None, bold: bool | None = None,
                 italic: bool | None = None) -> None:
         size_pt = size_pt or self.body_size
+        text = self._resolve_refs(text)
         for part in _INLINE.split(text):
             if not part:
                 continue
@@ -280,6 +305,13 @@ class DocxRenderer:
                 label, url = part[1:-1].split("](", 1)
                 ooxml.add_hyperlink(paragraph, label, url, self.font, size_pt, self.p["hyperlink_color"])
                 continue
+            elif (part[0], part[-1]) in {("~", "~"), ("^", "^")} and len(part) > 2:
+                run = paragraph.add_run(part[1:-1])
+                ooxml.set_run_font(run, self.font, size_pt)
+                if part[0] == "~":
+                    run.font.subscript = True
+                else:
+                    run.font.superscript = True
             elif part.startswith("*") and part.endswith("*") and len(part) > 2:
                 run = paragraph.add_run(part[1:-1])
                 run.italic = True
@@ -374,29 +406,94 @@ class DocxRenderer:
         if text:
             self._inline(para, text, size_pt=size, bold=True if cfg.get("bold_text") else None,
                          italic=cfg.get("italic"))
-        if kind == "table":
+        if kind == "table" and self.p["caption"].get("table_position", "above") != "below":
             para.paragraph_format.keep_with_next = True
 
-    def _caption_entries(self, spec: ReportSpec) -> dict[str, list[str]]:
-        """Văn bản chú thích theo đúng thứ tự/số sẽ render - dùng cho DANH MỤC HÌNH/BẢNG."""
-        numberer, counter = HeadingNumberer(self.scheme), CaptionCounter(self.scheme)
+    # ------------------------------------------------------------------ barem
+
+    @property
+    def barem(self) -> dict:
+        cfg = self.p.get("barem") or {}
+        return cfg if cfg.get("enabled") else {}
+
+    @staticmethod
+    def _shift(blocks: list) -> list:
+        """Hạ mỗi tiêu đề một cấp: chương của người viết thành mục con trong khung barem."""
+        return [b.model_copy(update={"level": min(4, b.level + 1)}) if isinstance(b, HeadingBlock) else b
+                for b in blocks]
+
+    def _effective_body(self, spec: ReportSpec) -> list:
+        """Khung barem (theo báo cáo mẫu): I. Giới thiệu chung (1. Thành viên nhóm, 2. Bảng phân công công việc,
+        + spec.introduction) -> II. Nội dung (spec.body hạ một cấp). Tài liệu tham khảo thêm ở cuối (III.)."""
+        cfg = self.barem
+        if not cfg:
+            return list(spec.introduction) + list(spec.body)
+        heading = lambda level, text: HeadingBlock(type="heading", level=level, text=text)  # noqa: E731
+        blocks: list = [heading(1, cfg["intro_title"]),
+                        heading(2, cfg["members_title"]), self._members_table(spec),
+                        heading(2, cfg["assignments_title"]), self._assignments_table(spec)]
+        blocks += self._shift(spec.introduction)
+        blocks.append(heading(1, cfg["content_title"]))
+        blocks += self._shift(spec.body)
+        return blocks
+
+    def _members_table(self, spec: ReportSpec) -> TableBlock:
+        cfg, members = self.barem, spec.meta.members
+        with_email = any(m.email for m in members)
+        columns = ["STT", "MSSV", "Họ và tên"] + (["Email"] if with_email else [])
+        rows = []
+        for i, m in enumerate(members, start=1):
+            row = [str(i), m.student_id or cfg["placeholder"], m.name]
+            if with_email:
+                row.append(f"[{m.email}](mailto:{m.email})" if m.email else "")
+            rows.append(row)
+        if not rows:
+            rows = [["1", cfg["placeholder"], cfg["placeholder"]]]
+        return TableBlock(type="table", columns=columns, rows=rows, caption=cfg["members_caption"],
+                          col_widths=[1, 2, 3, 5] if with_email else [1, 2, 4], label="barem-members")
+
+    def _assignments_table(self, spec: ReportSpec) -> TableBlock:
+        cfg = self.barem
+        ph = cfg["placeholder"]
+        if spec.assignments:
+            rows = [[str(i), a.member, "\n".join(f"- {t}" for t in a.tasks) or ph, a.completion or ph]
+                    for i, a in enumerate(spec.assignments, start=1)]
+        else:  # barem bắt buộc có bảng -> để trống cho nhóm điền, barem check sẽ nhắc
+            rows = [[str(i), m.name, ph, ph] for i, m in enumerate(spec.meta.members, start=1)] or [["1", ph, ph, ph]]
+        return TableBlock(type="table", columns=["STT", "Người phụ trách", "Nhiệm vụ được giao", "Mức độ hoàn thành"],
+                          rows=rows, caption=cfg["assignments_caption"], col_widths=[1, 3, 4, 2.4],
+                          label="barem-assignments")
+
+    def _scan(self) -> tuple[dict[str, list[str]], dict[str, str]]:
+        """Duyệt khung đã dựng theo đúng thứ tự render: văn bản chú thích (cho DANH MỤC HÌNH/BẢNG)
+        và giá trị của từng nhãn [[...]] ("mục 2.5.1", "Bảng 9", "Hình 19")."""
+        numberer, counter = self._numberer(), CaptionCounter(self.caption_scheme)
         sep = self.p["caption"].get("separator", ": ")
-        out: dict[str, list[str]] = {"figure": [], "table": []}
-        for block in spec.body:
+        captions: dict[str, list[str]] = {"figure": [], "table": []}
+        refs: dict[str, str] = {}
+        for block in self.body_blocks:
             kind = None
             if isinstance(block, HeadingBlock) and block.numbered:
-                numberer.next(block.level)
+                number = numberer.next(block.level)
                 if block.level == 1:
                     counter.new_chapter(numberer.chapter)
+                if block.label:
+                    refs[block.label] = number.rstrip(".:")
             elif isinstance(block, (ImageBlock, FigurePlaceholderBlock)):
                 kind = "figure"
             elif isinstance(block, TableBlock) and block.caption:
                 kind = "table"
             if kind:
                 prefix, number, _ = counter.next(kind)
+                name = f"{self._caption_label(kind)} {prefix}{number}"
                 caption = re.sub(r"\*\*|\*|`", "", block.caption)
-                out[kind].append(f"{self._caption_label(kind)} {prefix}{number}{sep if caption else ''}{caption}")
-        return out
+                captions[kind].append(f"{name}{sep if caption else ''}{caption}")
+                if block.label:
+                    refs[block.label] = name
+        return captions, refs
+
+    def _resolve_refs(self, text: str) -> str:
+        return _REF.sub(lambda m: self.refs.get(m.group(1), m.group(0)), text)
 
     # ------------------------------------------------------------------ cover
 
@@ -410,86 +507,7 @@ class DocxRenderer:
             run.add_picture(str(path), width=Cm(image.width_cm),
                             height=Cm(image.height_cm) if image.height_cm else None)
             ooxml.float_picture(run, Cm(image.x_cm), Cm(image.y_cm))
-        if self.p.get("cover_layout") == "banner":
-            self._cover_banner(spec)
-        else:
-            self._cover_classic(spec)
-
-    def _cover_banner(self, spec: ReportSpec) -> None:
-        """Bìa kiểu khoa ĐT-VT: logo trái + tên trường/khoa phải, tiêu đề, bảng thông tin có viền."""
-        m = spec.meta
-        labels = self.p["labels"]
-        top = self.doc.paragraphs[0] if self.doc.paragraphs else self.doc.add_paragraph()
-        top.paragraph_format.space_after = Pt(0)
-        logo = self._resolve(m.logo_path) if m.logo_path else None
-        head = self.doc.add_table(rows=1, cols=2)
-        head.alignment = WD_TABLE_ALIGNMENT.CENTER
-        ooxml.table_no_borders(head)
-        left, right = head.rows[0].cells
-        widths = (Cm(5.8), Cm(self.text_width_cm - 5.8))
-        for c, column in enumerate(head.columns):
-            column.width = widths[c]
-        left.width, right.width = widths
-        left.vertical_alignment = right.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-        if logo and logo.exists():
-            lp = left.paragraphs[0]
-            lp.paragraph_format.first_line_indent = None
-            lp.add_run().add_picture(str(logo), width=Cm(5.6))
-        lines = [x for x in (m.university, m.school, m.faculty) if x]
-        for i, line in enumerate(lines):
-            para = right.paragraphs[0] if i == 0 else right.add_paragraph()
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            para.paragraph_format.space_after = Pt(6)
-            para.paragraph_format.first_line_indent = None
-            run = para.add_run(line.upper())
-            run.bold = True
-            ooxml.set_run_font(run, self.font, 13)
-
-        self._centered(m.report_type.upper(), 15, space_before=30, space_after=0)
-        title = m.topic or m.subject
-        self._centered(title.upper(), 17, space_before=30, space_after=6)
-        if m.subtitle:
-            self._centered(m.subtitle, 13, italic=True, space_before=6)
-
-        rows: list[tuple[str, list[str]]] = []
-        if m.subject and m.topic:
-            rows.append((labels["subject"], [m.subject]))
-        if m.instructors:
-            rows.append((labels["instructors"], m.instructors))
-        if m.members:
-            rows.append((labels["members"], [
-                f"{mem.name} – {mem.student_id}" if mem.student_id else mem.name for mem in m.members]))
-        if m.class_code:
-            rows.append((labels["class"], [m.class_code]))
-        spacer = self.doc.add_paragraph()
-        spacer.paragraph_format.space_before = Pt(60)
-        if rows:
-            table = self.doc.add_table(rows=len(rows), cols=2)
-            table.alignment = WD_TABLE_ALIGNMENT.CENTER
-            ooxml.table_borders(table)
-            widths = (Cm(5.2), Cm(self.text_width_cm - 5.2))
-            for c, column in enumerate(table.columns):
-                column.width = widths[c]
-            for r, (label, values) in enumerate(rows):
-                lcell, rcell = table.rows[r].cells
-                lcell.width, rcell.width = widths
-                lcell.vertical_alignment = rcell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-                lp = lcell.paragraphs[0]
-                lp.paragraph_format.space_before = lp.paragraph_format.space_after = Pt(6)
-                lp.paragraph_format.first_line_indent = None
-                run = lp.add_run(label.rstrip(":"))
-                run.bold = True
-                ooxml.set_run_font(run, self.font, 12)
-                for i, value in enumerate(values):
-                    vp = rcell.paragraphs[0] if i == 0 else rcell.add_paragraph()
-                    vp.paragraph_format.first_line_indent = None
-                    vp.paragraph_format.space_before = Pt(6 if i == 0 else 0)
-                    vp.paragraph_format.space_after = Pt(6 if i == len(values) - 1 else 0)
-                    vp.paragraph_format.line_spacing = 1.5
-                    ooxml.set_run_font(vp.add_run(value), self.font, 12)
-        place = " – ".join(x for x in (m.city, m.year) if x)
-        if place:
-            self._centered(place.upper(), 13, bold=False, italic=True, space_before=40)
+        self._cover_classic(spec)
 
     def _cover_classic(self, spec: ReportSpec) -> None:
         m = spec.meta
@@ -588,11 +606,14 @@ class DocxRenderer:
         if footer_cfg.get("page_number", "center") == "none":
             return
         fp.alignment = ALIGN[footer_cfg.get("page_number", "center")]
-        ooxml.add_field(fp, "PAGE", "1", font=self.font, size_pt=footer_cfg["size_pt"])
+        ooxml.add_field(fp, "PAGE", "1", font=footer_cfg.get("font", self.font), size_pt=footer_cfg["size_pt"])
         if footer_cfg.get("border_top"):
             ooxml.paragraph_border(fp, {"top": {"sz": "6", "color": "000000"}})
 
     # ------------------------------------------------------------------ TOC
+
+    def _numberer(self) -> HeadingNumberer:
+        return HeadingNumberer(self.scheme, self.p["headings"].get("level1_format", "{roman}."))
 
     def _heading(self, block: HeadingBlock, numberer: HeadingNumberer) -> tuple[str, str]:
         """(style, text) cho một tiêu đề; dùng chung cho thân bài và MỤC LỤC để luôn khớp nhau."""
@@ -600,24 +621,26 @@ class DocxRenderer:
             return (FRONT_STYLE if block.level == 1 else f"Heading {block.level}"), block.text
         return f"Heading {block.level}", f"{numberer.next(block.level)} {block.text}"
 
-    def _toc_entries(self, spec: ReportSpec) -> list[tuple[int, str]]:
+    def _toc_entries(self, spec: ReportSpec, max_level: int = 3) -> list[tuple[int, str]]:
         entries: list[tuple[int, str]] = []
         if spec.preface:
             entries.append((1, self.labels["preface"]))
-        front_numberer = HeadingNumberer(self.scheme)
+        front_numberer = self._numberer()
         for block in spec.front_matter:
             if isinstance(block, HeadingBlock):
                 entries.append((block.level, self._heading(block, front_numberer)[1]))
-        if spec.include_toc:
+        if spec.include_toc and self.p.get("toc", {}).get("include_self", True):
             entries.append((1, self.labels["toc"]))
         if spec.list_of_figures:
             entries.append((1, self.labels["lof"]))
         if spec.list_of_tables:
             entries.append((1, self.labels["lot"]))
-        numberer = HeadingNumberer(self.scheme)
-        for block in spec.body:
+        numberer = self._numberer()
+        for block in self.body_blocks:
             if isinstance(block, HeadingBlock):
-                entries.append((block.level, self._heading(block, numberer)[1]))
+                text = self._heading(block, numberer)[1]
+                if block.level <= max_level:  # MỤC LỤC chỉ gồm cấp 1-3 (TOC \o "1-3")
+                    entries.append((block.level, text))
         if spec.references:
             title = self.labels["references"]
             if self.references_numbered:
@@ -651,7 +674,7 @@ class DocxRenderer:
         paragraphs = []
         for i, (level, text) in enumerate(entries):
             para = first if i == 0 else self.doc.add_paragraph(style=style(level))
-            ooxml.set_run_font(para.add_run(f"{text}\t"), self.font, self.body_size)
+            ooxml.set_run_font(para.add_run(f"{text}\t"), self.font, self.p.get("toc", {}).get("size_pt", self.body_size))
             paragraphs.append(para)
         if not paragraphs:
             paragraphs.append(first)
@@ -660,9 +683,9 @@ class DocxRenderer:
     # ------------------------------------------------------------------ body
 
     def _body(self, spec: ReportSpec) -> None:
-        numberer = HeadingNumberer(self.scheme)
+        numberer = self._numberer()
         chapter_break = self.p.get("chapter_page_break", True)
-        seen_chapter = self._blocks(spec.body, numberer, page_started=False)
+        seen_chapter = self._blocks(self.body_blocks, numberer, page_started=False)
         self._references(spec, numberer, chapter_break and seen_chapter)
 
     def _blocks(self, blocks, numberer: HeadingNumberer, page_started: bool) -> bool:
@@ -707,7 +730,7 @@ class DocxRenderer:
             self._heading_para(f"{numberer.next(1)} {title}", "Heading 1")
         else:
             self._front_heading(title)
-        num_id = self.numbering.new_list("bracket")
+        num_id = self.numbering.new_list(self.p.get("references_style", "bracket"))
         for ref in spec.references:
             para = self.doc.add_paragraph()
             para.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -720,7 +743,8 @@ class DocxRenderer:
 
     def _list(self, block: ListBlock, container=None) -> None:
         container = container or self.doc
-        num_id = self.numbering.new_list(block.style)
+        style = self.p.get("lists", {}).get(block.style, block.style)  # vd barem: bullet -> dash
+        num_id = self.numbering.new_list(style)
         for item in block.items:
             para = container.add_paragraph()
             para.alignment = ALIGN[self.p["body"]["align"]]
@@ -738,12 +762,14 @@ class DocxRenderer:
                 longest = max(max((len(line) for line in cell.split("\n")), default=0) for cell in cells)
                 weights.append(min(max(longest, 4), 40))
         total = sum(weights) or 1
-        return [self.text_width_cm * w / total for w in weights]
+        width = min(self.text_width_cm, self.p["table"].get("width_cm") or self.text_width_cm)
+        return [width * w / total for w in weights]
 
     def _table(self, block: TableBlock) -> None:
         cfg = self.p["table"]
         size = cfg["font_size_pt"]
-        if block.caption:
+        caption_below = self.p["caption"].get("table_position", "above") == "below"
+        if block.caption and not caption_below:
             self._caption("table", block.caption)
             self.doc.paragraphs[-1].paragraph_format.keep_with_next = True
         n = len(block.columns)
@@ -760,7 +786,8 @@ class DocxRenderer:
 
         for c, title in enumerate(block.columns):
             cell = table.rows[0].cells[c]
-            ooxml.cell_shading(cell, cfg["header_fill"])
+            if cfg.get("header_fill"):
+                ooxml.cell_shading(cell, cfg["header_fill"])
             cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
             para = cell.paragraphs[0]
             para.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -789,9 +816,9 @@ class DocxRenderer:
                         para.paragraph_format.first_line_indent = Cm(-0.4)
                         self._inline(para, "- " + line[2:], size_pt=size)
                     else:
-                        auto = self.p["table"].get("body_align", "auto") == "auto"
-                        para.alignment = (WD_ALIGN_PARAGRAPH.CENTER if short_col[c] and auto
-                                          else WD_ALIGN_PARAGRAPH.LEFT)
+                        body_align = self.p["table"].get("body_align", "auto")
+                        centered = body_align == "center" or (body_align == "auto" and short_col[c])
+                        para.alignment = WD_ALIGN_PARAGRAPH.CENTER if centered else WD_ALIGN_PARAGRAPH.LEFT
                         self._inline(para, line, size_pt=size)
 
         # Đặt cả gridCol lẫn tcW để độ rộng cột có hiệu lực ở mọi trình xem
@@ -800,6 +827,12 @@ class DocxRenderer:
         for row in table.rows:
             for c, cell in enumerate(row.cells):
                 cell.width = Cm(widths[c])
+        if block.caption and caption_below:
+            for cell in table.rows[-1].cells:  # giữ bảng liền với chú thích bên dưới
+                for para in cell.paragraphs:
+                    para.paragraph_format.keep_with_next = True
+            self._caption("table", block.caption)
+            return
         spacer = self.doc.add_paragraph()
         spacer.paragraph_format.space_after = Pt(4)
 

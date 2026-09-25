@@ -7,8 +7,25 @@ dành riêng cho Word**. Một **kho skill** cho Claude biết quy tắc của t
 - Đầu ra: **đúng một file `.docx`** cho mỗi báo cáo (không xuất PDF, không tạo file phụ).
 - Mọi file xuất ra được **watermark-remover** tự động xoá nhãn công cụ/AI trong metadata.
 
-Quy chuẩn định dạng mặc định lấy từ báo cáo mẫu *Báo cáo đồ án học phần Mạng máy tính – CLC HCMUS*
-(xem [docs/phan-tich-bao-cao-mau.md](docs/phan-tich-bao-cao-mau.md)).
+## Barem – mục đích chính của dự án
+
+Mọi báo cáo đầu ra đều theo **một barem duy nhất**, lấy từ báo cáo mẫu *Báo cáo đồ án học phần Mạng máy tính –
+CLC HCMUS* (xem [docs/phan-tich-bao-cao-mau.md](docs/phan-tich-bao-cao-mau.md)); bản dựng chuẩn là
+`examples/output/mang-may-tinh-do-an.docx`. Đưa vào báo cáo trình bày kiểu gì (chương "CHƯƠNG 1:", đánh số
+2.5.1, bìa khác, font khác…), công cụ chỉ lấy **nội dung** rồi dựng lại đúng khung và định dạng của barem:
+
+| Phần | Nội dung | Định dạng |
+|---|---|---|
+| Bìa | Đại học, trường, loại báo cáo, học phần, đề tài, GVHD, thành viên, nơi – năm | Khung viền, chữ in hoa căn giữa |
+| LỜI MỞ ĐẦU, MỤC LỤC | Trang riêng, kết thúc bằng `---o0o---` | Tiêu đề 20pt căn giữa, mục lục có dấu chấm dẫn |
+| **I. Giới thiệu chung** | 1. Thành viên nhóm (bảng STT/MSSV/Họ và tên), 2. Bảng phân công công việc, rồi các mục giới thiệu thêm | Tự dựng từ dữ liệu |
+| **II. Nội dung** | Các chương của báo cáo: `1.`, `1.1.`, `1.1.1.` | Tiêu đề xanh #2F5496 |
+| **III. Tài liệu tham khảo** | Danh sách 1. 2. 3. | |
+| Toàn bài | Times New Roman 14pt; header "Khoa … \| Mã lớp" có đường kẻ; số trang giữa chân trang; bảng có hàng tiêu đề xám, chú thích "Bảng N:" phía trên; "Hình N:" dưới hình; gạch đầu dòng "-" | |
+
+`wordreport lint` và tool MCP `check_barem` chấm theo barem: thiếu lời mở đầu, thành viên, bảng phân công,
+GVHD, chương nội dung, tài liệu tham khảo… đều được liệt kê. Câu dẫn tới bảng/hình/mục dùng tham chiếu chéo
+`[[label]]` nên số luôn đúng sau khi đổi khung.
 
 ## Cách hoạt động
 
@@ -26,17 +43,15 @@ flowchart LR
 ```
 
 Claude chỉ lo nội dung và cấu trúc; toàn bộ định dạng (font, lề, đánh số tiêu đề, mục lục, chú thích,
-header/footer) được áp theo style profile:
+header/footer) do renderer áp theo profile:
 
 | Profile | Dùng cho |
 |---|---|
-| `hcmus-clc` | Báo cáo kiểu CLC HCMUS: Letter, TNR 14pt, tiêu đề xanh, đánh số `I. / 1. / 1.1.` |
-| `hcmus-fetel` | Báo cáo đồ án Khoa ĐT-VT HCMUS: A4, khung trang đôi xanh mọi trang, bìa logo + bảng thông tin, TNR 13pt, giãn dòng 1.5, đánh số theo chương `I. / 1.1. / 1.1.1.`, chú thích bảng đậm / hình nghiêng |
-| `nd30-a4` | Báo cáo A4 doanh nghiệp/hành chính: lề 3-2-2-2 cm, TNR 13pt |
+| `hcmus-clc` (mặc định) | **Barem** ở trên |
+| `nd30-a4` | Văn bản doanh nghiệp/hành chính A4 (lề 3-2-2-2 cm, TNR 13pt), không có mục thành viên/phân công |
 
-Hỗ trợ: trang bìa (logo, GVHD, thành viên, lớp), lời mở đầu, phần đầu tuỳ chọn (tóm tắt...), mục lục,
-danh mục hình, danh mục bảng, tiêu đề không đánh số (MỞ ĐẦU, CHỮ VIẾT TẮT...), bảng, hình, khối code,
-hộp ghi chú, tài liệu tham khảo `[1]`.
+Trong văn bản hỗ trợ `**đậm**`, `*nghiêng*`, `` `mã` ``, `[chữ](url)`, chỉ số dưới/trên `V~OUT~`, `x^2^` và
+tham chiếu chéo `[[label]]`.
 
 ## Cài đặt
 
@@ -67,7 +82,8 @@ wordreport generate "Soạn báo cáo đồ án học phần theo ghi chú, văn
     -o out/bao-cao.docx --markitdown
 ```
 
-- Chế độ mặc định `agent`: Claude nạp skill, dựng báo cáo từng chương qua MCP, lưu, đọc lint và tự sửa.
+- Chế độ mặc định `agent`: Claude nạp skill, đổ nội dung vào barem qua MCP, chấm barem, lưu, đọc lint và tự sửa.
+- Đưa một báo cáo có sẵn (`--source bao-cao-cu.pdf`) để định dạng lại: kết quả theo barem, không theo file nguồn.
 - `--mode plan`: một lượt gọi, nhanh hơn, phù hợp khi ghi chú đã đủ ý.
 - Tuỳ chọn: `--model` (mặc định `claude-opus-5`), `--effort low|medium|high|xhigh|max`, `--profile`.
 
@@ -75,8 +91,10 @@ wordreport generate "Soạn báo cáo đồ án học phần theo ghi chú, văn
 
 ```bash
 wordreport render examples/mang-may-tinh-do-an.json -o out/bao-cao.docx
-wordreport render examples/mang-may-tinh-do-an.json -o out/bao-cao-a4.docx --profile nd30-a4
 ```
+
+Dữ liệu đầu vào theo barem: `meta` (bìa, `members`), `preface`, `assignments`, `introduction` (mục giới thiệu
+thêm), `body` (các chương, tiêu đề cấp 1), `references` – xem `examples/mang-may-tinh-do-an.json`.
 
 ### 3. Dùng trong Claude Desktop / Claude Code
 
@@ -104,7 +122,7 @@ Tương đương: `wordreport clean …` hoặc tool MCP `remove_watermarks`.
 ### 5. Kiểm tra và đọc file Word có sẵn
 
 ```bash
-wordreport lint "bao-cao-cu.docx"          # font, tiêu đề, chú thích, gạch đầu dòng gõ tay, chính tả, nhãn AI...
+wordreport lint "bao-cao-cu.docx"          # chấm barem + font, tiêu đề, chú thích, chính tả, nhãn AI...
 wordreport inspect "bao-cao-cu.docx"       # xuất Markdown
 ```
 
@@ -121,8 +139,9 @@ lệnh chạy bằng biến `WORDREPORT_WORD_MCP`). Quy tắc dùng nằm trong 
 | Nhóm | Tool |
 |---|---|
 | Skill & profile | `list_skills`, `load_skill`, `list_profiles` |
-| Soạn thảo | `create_report`, `set_meta`, `set_preface`, `add_blocks`, `add_heading`, `add_paragraph`, `add_list`, `add_table`, `add_image`, `add_figure_placeholder`, `add_code_block`, `add_note`, `add_reference` |
-| Chỉnh sửa | `get_outline`, `get_spec`, `update_block`, `delete_block`, `move_block`, `load_spec` |
+| Soạn thảo | `create_report`, `set_meta`, `set_preface`, `set_assignments`, `add_blocks` (`section`: body / introduction), `add_heading`, `add_paragraph`, `add_list`, `add_table`, `add_image`, `add_figure_placeholder`, `add_code_block`, `add_note`, `add_reference` |
+| Chỉnh sửa | `get_outline` (dàn ý thật sau khi áp barem), `get_spec`, `update_block`, `delete_block`, `move_block`, `load_spec` |
+| Barem | `check_barem` |
 | Xuất file | `save_report` (.docx + số trang mục lục + watermark-remover + lint), `render_spec_file` |
 | Đọc & kiểm tra | `read_document`, `document_outline`, `lint_document`, `remove_watermarks` |
 
@@ -130,7 +149,7 @@ lệnh chạy bằng biến `WORDREPORT_WORD_MCP`). Quy tắc dùng nằm trong 
 
 | Skill | Dùng khi |
 |---|---|
-| `report-structure-vn` | Bắt đầu một báo cáo: dàn ý chuẩn tiếng Việt |
+| `report-structure-vn` | **Barem**: khung bắt buộc và cách đổ mọi báo cáo vào khung |
 | `cover-page` | Trang bìa, header/footer |
 | `heading-numbering` | Tiêu đề nhiều cấp, đánh số tự động |
 | `table-of-contents` | Mục lục tự động và số trang |
@@ -140,7 +159,7 @@ lệnh chạy bằng biến `WORDREPORT_WORD_MCP`). Quy tắc dùng nằm trong 
 | `lists` | Chọn kiểu danh sách |
 | `academic-writing-vn` | Văn phong, thuật ngữ, lỗi chính tả hay gặp |
 | `references` | Tài liệu tham khảo |
-| `quality-check` | Lint và vòng lặp sửa lỗi |
+| `quality-check` | Chấm barem, lint và vòng lặp sửa lỗi |
 | `watermark-remover` | Xoá nhãn công cụ/AI khỏi file .docx |
 | `word-mcp` | Sửa chi tiết file .docx bằng MCP Microsoft Word |
 | `read-sources` | Đọc PDF/DOCX/PPTX/XLSX/URL qua markitdown (đổi `C:\...` → `file:///C:/...`) |
@@ -153,5 +172,6 @@ Thêm skill mới: tạo `skills/<ten-skill>/SKILL.md` với frontmatter `name` 
 ## Giới hạn
 
 - Không có Microsoft Word thì mục lục chưa có số trang cho tới khi mở file bằng Word và cập nhật field.
-- Chưa hỗ trợ phụ lục đánh số riêng, bảng gộp ô, khổ ngang từng trang, công thức toán dạng equation.
+- Chưa hỗ trợ phụ lục đánh số riêng, bảng gộp ô, khổ ngang từng trang, công thức toán dạng equation (phân số
+  viết một dòng).
 - Logo trường không kèm theo repo; đặt `meta.logo_path` tới file logo của bạn.

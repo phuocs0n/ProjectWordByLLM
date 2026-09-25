@@ -26,11 +26,13 @@ def to_roman(n: int) -> str:
 
 
 class HeadingNumberer:
-    def __init__(self, scheme: str = "section") -> None:
+    def __init__(self, scheme: str = "section", level1_format: str = "{roman}.") -> None:
+        """level1_format: mẫu tiêu đề chương, ví dụ "{roman}." -> "I.", "CHƯƠNG {n}:" -> "CHƯƠNG 1:"."""
         if scheme not in {"section", "chapter"}:
             raise ValueError(f"heading_numbering không hợp lệ: {scheme}")
         self.scheme = scheme
-        self.counters = [0, 0, 0]
+        self.level1_format = level1_format
+        self.counters = [0, 0, 0, 0]
 
     @property
     def chapter(self) -> int:
@@ -41,12 +43,11 @@ class HeadingNumberer:
         self.counters[idx] += 1
         for j in range(idx + 1, len(self.counters)):
             self.counters[j] = 0
-        c1, c2, c3 = self.counters
+        c1, c2, c3, c4 = self.counters
         if level == 1:
-            return f"{to_roman(c1)}."
-        if self.scheme == "chapter":
-            return f"{c1}.{c2}." if level == 2 else f"{c1}.{c2}.{c3}."
-        return f"{c2}." if level == 2 else f"{c2}.{c3}."
+            return self.level1_format.format(n=c1, roman=to_roman(c1))
+        parts = [c1, c2, c3, c4][: level] if self.scheme == "chapter" else [c2, c3, c4][: level - 1]
+        return ".".join(str(x) for x in parts) + "."
 
 
 class CaptionCounter:
