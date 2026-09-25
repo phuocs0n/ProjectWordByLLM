@@ -5,13 +5,17 @@ description: Chỉnh sửa hoặc chuẩn hoá định dạng một file .docx c
 
 # Chỉnh sửa .docx có sẵn
 
-## Cách 1 – Dựng lại theo profile (khuyến nghị cho "định dạng lại toàn bộ")
+## Cách 1 – Dựng lại theo BAREM (mặc định cho "định dạng lại toàn bộ")
+
+Mục tiêu là file mới giống báo cáo mẫu của dự án, KHÔNG giữ bố cục/định dạng của file cũ.
+Ánh xạ từng phần của file cũ vào barem theo bảng trong skill `report-structure-vn`.
 
 1. `read_document(path)` → Markdown (giữ tiêu đề, bảng).
 2. `lint_document(path)` để liệt kê lỗi hiện có (dùng làm checklist).
 3. Chuyển Markdown thành ReportSpec: `#` → heading (bỏ số thứ tự cũ), bảng → `table`, gạch đầu dòng → `list`,
    ảnh → `figure_placeholder` (hoặc `image` nếu người dùng cung cấp thư mục ảnh).
-4. `create_report` + `add_blocks` → `save_report` ra file MỚI (không ghi đè bản gốc).
+4. `create_report` (meta + members) → `set_preface` → `set_assignments` → `add_blocks(section="introduction")`
+   → `add_blocks` (các chương) → `check_barem` → `save_report` ra file MỚI (không ghi đè bản gốc).
 5. So sánh lint trước/sau và báo cáo cho người dùng.
 
 ## Cách 2 – Sửa nhỏ giữ nguyên bố cục

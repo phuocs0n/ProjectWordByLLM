@@ -1,4 +1,7 @@
-# Phân tích báo cáo mẫu → yêu cầu thiết kế công cụ
+# Phân tích báo cáo mẫu → barem của công cụ
+
+Báo cáo mẫu này là **barem** của dự án: mọi báo cáo đầu ra đều được dựng lại theo khung và định dạng dưới
+đây, bất kể file nguồn trình bày thế nào (profile `hcmus-clc`, skill `report-structure-vn`).
 
 Nguồn: *Báo cáo đồ án học phần Mạng máy tính – CLC HCMUS* (PDF 27 trang, bản tải từ Studocu).
 Số đo lấy tự động bằng PyMuPDF (vị trí, font, cỡ chữ, màu của từng span và hình vẽ).
@@ -17,8 +20,10 @@ Số đo lấy tự động bằng PyMuPDF (vị trí, font, cỡ chữ, màu c�
 | 26 | III. Tài liệu tham khảo | 4 URL trần |
 | 27 | Trang trống | Thừa |
 
-→ Công cụ mô hình hoá thành **ReportSpec**: `meta` (bìa) + `preface` + `include_toc` + `body` (block phẳng)
-+ `references`; renderer dựng 3 section: bìa / phần đầu / nội dung.
+→ Công cụ mô hình hoá thành **ReportSpec**: `meta` (bìa, thành viên) + `preface` + `assignments` + `introduction`
++ `body` (các chương) + `references`. Renderer dựng 3 section (bìa / phần đầu / nội dung) và tự tạo khung barem:
+I. Giới thiệu chung (1. Thành viên nhóm, 2. Bảng phân công công việc, mục giới thiệu thêm) → II. Nội dung
+(các chương) → III. Tài liệu tham khảo.
 
 ## 2. Quy chuẩn định dạng đo được (→ `profiles/hcmus-clc.yaml`)
 

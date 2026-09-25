@@ -10,7 +10,8 @@ def test_mcp_end_to_end(tmp_path):
     async def scenario():
         async with Client(server) as client:
             names = {t.name for t in (await client.list_tools()).tools}
-            assert {"create_report", "add_blocks", "save_report", "lint_document", "load_skill", "remove_watermarks"} <= names
+            assert {"create_report", "add_blocks", "save_report", "lint_document", "load_skill", "remove_watermarks",
+                    "set_assignments", "check_barem"} <= names
             assert not any("pdf" in n for n in names), "MCP chỉ xuất .docx"
 
             created = await client.call_tool("create_report", {"meta": {"subject": "Kiểm thử", "class_code": "X1"}})
@@ -24,8 +25,19 @@ def test_mcp_end_to_end(tmp_path):
             assert added.structured_content["total_blocks"] == 3
             await client.call_tool("add_reference", {"doc_id": doc_id, "text": "Tài liệu A", "url": "https://example.com"})
 
-            outline = await client.call_tool("get_outline", {"doc_id": doc_id})
-            assert "I. Chương một" in outline.content[0].text
+            await client.call_tool("set_assignments", {"doc_id": doc_id, "assignments": [
+                {"member": "An", "tasks": ["Viết báo cáo"], "completion": "100%"}]})
+            intro = await client.call_tool("add_blocks", {"doc_id": doc_id, "section": "introduction", "blocks": [
+                {"type": "heading", "level": 1, "text": "Tóm tắt"}]})
+            assert intro.structured_content["section"] == "introduction"
+
+            outline = (await client.call_tool("get_outline", {"doc_id": doc_id})).content[0].text
+            for line in ("I. Giới thiệu chung", "1. Thành viên nhóm", "2. Bảng phân công công việc",
+                         "3. Tóm tắt", "II. Nội dung", "1. Chương một", "III. Tài liệu tham khảo"):
+                assert line in outline
+
+            barem = (await client.call_tool("check_barem", {"doc_id": doc_id})).structured_content["result"]
+            assert any("Thành viên nhóm" in i["message"] for i in barem)  # meta chưa có members
 
             bad = await client.call_tool("add_blocks", {"doc_id": doc_id, "blocks": [{"type": "khong-co"}]})
             assert bad.is_error and "khong-co" in bad.content[0].text
@@ -37,6 +49,7 @@ def test_mcp_end_to_end(tmp_path):
             assert [f.name for f in tmp_path.iterdir()] == ["mcp.docx"], "chỉ xuất đúng một file .docx"
             assert result["watermarks_removed"] is not None
             assert result["lint"]["errors"] == 0 and result["lint"]["warnings"] == 0
+            assert any(i["rule"] == "barem" for i in result["barem"])
 
             spec_json = (await client.call_tool("get_spec", {"doc_id": doc_id})).content[0].text
             spec_path = tmp_path / "mcp-spec.json"

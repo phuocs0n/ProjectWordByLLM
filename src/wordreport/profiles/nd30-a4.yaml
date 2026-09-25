@@ -5,6 +5,9 @@ name: nd30-a4
 extends: hcmus-clc
 description: Báo cáo doanh nghiệp/hành chính khổ A4 (lề 3-2-2-2 cm, TNR 13pt, giãn dòng 1.3)
 
+barem:
+  enabled: false          # văn bản doanh nghiệp không có mục thành viên nhóm / phân công
+
 page:
   size: a4
   margin_top_cm: 2.0

@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 import functools
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -25,15 +25,20 @@ from .inspector import lint_report, outline as docx_outline, read_source
 from .postprocess import finalize
 from .renderer import DocxRenderer
 from .skills import SkillLibrary
-from .spec import Block, Reference, ReportMeta, ReportSpec
+from .barem import check_spec
+from .spec import Assignment, Block, Reference, ReportMeta, ReportSpec
 from .style_profile import describe_profiles
 from .watermark_remover import find_watermarks, remove_watermarks as _remove_watermarks
 
 INSTRUCTIONS = """\
-Bộ công cụ soạn thảo & định dạng báo cáo Microsoft Word (.docx) chuyên nghiệp.
-Quy trình: list_skills → load_skill('report-structure-vn') → create_report → set_preface →
-add_blocks (theo lô, mỗi chương một lần) → get_outline → save_report → lint_document.
-Không tự đánh số tiêu đề, không gõ tay gạch đầu dòng/mục lục: renderer lo phần định dạng.
+Bộ công cụ soạn thảo & định dạng báo cáo Microsoft Word (.docx) theo MỘT BAREM CHUẨN (profile hcmus-clc,
+trích từ báo cáo mẫu): Bìa -> LỜI MỞ ĐẦU -> MỤC LỤC -> I. Giới thiệu chung (1. Thành viên nhóm,
+2. Bảng phân công công việc) -> II. Nội dung -> III. Tài liệu tham khảo. Báo cáo nguồn có định dạng gì
+cũng phải chuyển về barem này, không bắt chước định dạng của file nguồn.
+Quy trình: load_skill('report-structure-vn') -> create_report(meta có members) -> set_preface ->
+set_assignments -> add_blocks(section="introduction") nếu có -> add_blocks (các chương nội dung, cấp 1)
+-> get_outline -> check_barem -> save_report -> lint_document.
+Renderer tự dựng mục I, mục II, số thứ tự, mục lục, chú thích; không tự đánh số, không gõ tay gạch đầu dòng.
 """
 
 server = MCPServer("word-report", instructions=INSTRUCTIONS)
@@ -81,16 +86,27 @@ def _session(doc_id: str) -> Session:
         raise ValueError(f"doc_id '{doc_id}' không tồn tại. Gọi create_report hoặc load_spec trước.") from None
 
 
-def _append(doc_id: str, blocks: list[dict[str, Any]], position: int | None = None) -> dict[str, Any]:
+SECTIONS = ("body", "introduction", "front_matter")
+
+
+def _target(session: Session, section: str) -> list:
+    if section not in SECTIONS:
+        raise ValueError(f"section phải là một trong {SECTIONS}")
+    return getattr(session.spec, section)
+
+
+def _append(doc_id: str, blocks: list[dict[str, Any]], position: int | None = None,
+            section: str = "body") -> dict[str, Any]:
     session = _session(doc_id)
+    target = _target(session, section)
     parsed = [_block_adapter.validate_python(b) for b in blocks]
     if position is None:
-        session.spec.body.extend(parsed)
-        start = len(session.spec.body) - len(parsed)
+        target.extend(parsed)
+        start = len(target) - len(parsed)
     else:
-        start = max(0, min(position, len(session.spec.body)))
-        session.spec.body[start:start] = parsed
-    return {"added": len(parsed), "first_index": start, "total_blocks": len(session.spec.body)}
+        start = max(0, min(position, len(target)))
+        target[start:start] = parsed
+    return {"section": section, "added": len(parsed), "first_index": start, "total_blocks": len(target)}
 
 
 # ---------------------------------------------------------------------------
@@ -134,6 +150,7 @@ def create_report(profile: str = "hcmus-clc", meta: dict[str, Any] | None = None
         profile: tên style profile (xem list_profiles).
         meta: thông tin trang bìa - university, school, faculty, report_type, subject, topic,
             instructors[], members[{name, student_id, email}], class_code, city, year, logo_path.
+            members là bắt buộc theo barem: renderer dựng bảng "I.1 Thành viên nhóm" từ đây.
         include_toc: có tạo MỤC LỤC tự động hay không.
         base_dir: thư mục gốc để phân giải đường dẫn ảnh/logo tương đối.
     """
@@ -160,15 +177,35 @@ def set_preface(doc_id: str, paragraphs: list[str]) -> str:
 
 
 @tool
-def add_blocks(doc_id: str, blocks: list[dict[str, Any]], position: int | None = None) -> dict[str, Any]:
+def add_blocks(doc_id: str, blocks: list[dict[str, Any]], position: int | None = None,
+               section: str = "body") -> dict[str, Any]:
     """Thêm nhiều block một lần (cách hiệu quả nhất). Mỗi block có trường `type`:
-    heading{level 1-3, text} | paragraph{text, align} | list{items[], style dash|bullet|number|roman|alpha, level}
-    | table{columns[], rows[][], caption, col_widths[]} | image{path, caption, width_cm}
-    | figure_placeholder{caption, description} | code{code, caption, language}
+    heading{level 1-4, text, label} | paragraph{text, align} | list{items[], style dash|bullet|number|roman|alpha, level}
+    | table{columns[], rows[][], caption, col_widths[], label} | image{path, caption, width_cm, label}
+    | figure_placeholder{caption, description, label} | code{code, caption, language}
     | note{text, kind note|tip|warning} | page_break | divider.
-    Văn bản hỗ trợ **đậm**, *nghiêng*, `mã`, [chữ](url). `position` = chèn tại chỉ số (mặc định: cuối).
+    section: "body" = các chương nội dung (tiêu đề cấp 1 = chương, nằm trong "II. Nội dung" của barem);
+    "introduction" = mục thêm của "I. Giới thiệu chung" (cấp 1 ở đây thành mục 3., 4., ...).
+    Văn bản hỗ trợ **đậm**, *nghiêng*, `mã`, [chữ](url), ~chỉ số dưới~, ^chỉ số trên^ và tham chiếu chéo
+    [[label]] (thành "Bảng 3", "Hình 7", "2.5.1"). `position` = chèn tại chỉ số (mặc định: cuối).
     """
-    return _append(doc_id, blocks, position)
+    return _append(doc_id, blocks, position, section)
+
+
+@tool
+def set_assignments(doc_id: str, assignments: list[dict[str, Any]]) -> str:
+    """Đặt "Bảng phân công công việc" (barem mục I.2): [{member, tasks[], completion}]."""
+    session = _session(doc_id)
+    session.spec.assignments = [Assignment.model_validate(a) for a in assignments]
+    return f"Đã đặt phân công cho {len(session.spec.assignments)} thành viên."
+
+
+@tool
+def check_barem(doc_id: str) -> list[dict[str, str]]:
+    """Chấm barem: liệt kê phần còn thiếu so với khung mẫu (thành viên, phân công, lời mở đầu, GVHD,
+    chương nội dung, tài liệu tham khảo, tham chiếu [[label]] hỏng...)."""
+    spec = _session(doc_id).spec
+    return [asdict(i) for i in check_spec(spec)]
 
 
 @tool
@@ -259,9 +296,14 @@ def move_block(doc_id: str, index: int, new_index: int) -> str:
 @tool
 def get_outline(doc_id: str) -> str:
     """Dàn ý hiện tại kèm số thứ tự tiêu đề sẽ được đánh và chỉ số block."""
-    spec = _session(doc_id).spec
-    head = f"profile={spec.profile} | toc={spec.include_toc} | preface={len(spec.preface)} đoạn | refs={len(spec.references)}"
-    return head + "\n" + "\n".join(spec.outline())
+    session = _session(doc_id)
+    spec = session.spec
+    head = (f"profile={spec.profile} | toc={spec.include_toc} | preface={len(spec.preface)} đoạn | "
+            f"members={len(spec.meta.members)} | assignments={len(spec.assignments)} | refs={len(spec.references)}")
+    skeleton = DocxRenderer(spec.profile, base_dir=session.base_dir).outline(spec)
+    lines = ["Dàn ý sẽ được dựng (đã áp barem):"] + [f"{'  ' * (lvl - 1)}{text}" for lvl, text in skeleton]
+    lines += ["", "Chỉ số block của spec.body (dùng cho update_block/delete_block/move_block):"] + spec.outline()
+    return head + "\n" + "\n".join(lines)
 
 
 @tool
@@ -295,6 +337,7 @@ def save_report(doc_id: str, output_path: str, update_toc_pages: bool = True) ->
     lint = lint_report(out, session.spec.profile)
     result["lint"] = {k: lint[k] for k in ("errors", "warnings", "infos")}
     result["lint_issues"] = lint["issues"][:20]
+    result["barem"] = [asdict(i) for i in check_spec(session.spec)]
     return result
 
 

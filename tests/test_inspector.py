@@ -24,7 +24,7 @@ def test_lint_detects_common_problems(tmp_path):
     _bad_doc(path)
     rules = {i.rule for i in lint_docx(path)}
     assert {"no-toc", "no-page-number", "heading-skip", "manual-bullet", "typo",
-            "empty-paragraphs", "font-mismatch", "table-without-caption"} <= rules
+            "empty-paragraphs", "font-mismatch", "table-without-caption", "barem-missing"} <= rules
 
 
 def test_docx_to_markdown(tmp_path):

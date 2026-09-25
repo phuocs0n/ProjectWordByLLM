@@ -7,10 +7,21 @@
     "report_type": "Báo cáo đồ án học phần",
     "subject": "Mạng máy tính",
     "topic": "Thiết kế, cấu hình mô hình mạng logic",
-    "instructors": ["ThS. Nguyễn Văn A", "ThS. Trần Thị B"],
+    "instructors": [
+      "ThS. Nguyễn Văn A",
+      "ThS. Trần Thị B"
+    ],
     "members": [
-      {"name": "Nguyễn Minh An", "student_id": "22127102", "email": "22127102@student.example.edu.vn"},
-      {"name": "Lê Thu Bình", "student_id": "22127117", "email": "22127117@student.example.edu.vn"}
+      {
+        "name": "Nguyễn Minh An",
+        "student_id": "22127102",
+        "email": "22127102@student.example.edu.vn"
+      },
+      {
+        "name": "Lê Thu Bình",
+        "student_id": "22127117",
+        "email": "22127117@student.example.edu.vn"
+      }
     ],
     "class_code": "22CLC03",
     "city": "TP. Hồ Chí Minh",
@@ -23,89 +34,233 @@
     "Trong báo cáo này, nhóm tập trung tìm hiểu, thiết kế và cấu hình mạng logic theo yêu cầu của đồ án thực hành 3 môn Mạng máy tính."
   ],
   "include_toc": true,
+  "assignments": [
+    {
+      "member": "Nguyễn Minh An",
+      "tasks": [
+        "Làm bài 1.",
+        "Viết báo cáo bài 1.",
+        "Chỉnh sửa báo cáo."
+      ],
+      "completion": "100%"
+    },
+    {
+      "member": "Lê Thu Bình",
+      "tasks": [
+        "Làm bài 2.",
+        "Viết báo cáo bài 2.",
+        "Tạo khuôn báo cáo."
+      ],
+      "completion": "100%"
+    }
+  ],
+  "introduction": [],
   "body": [
-    {"type": "heading", "level": 1, "text": "Giới thiệu chung"},
-    {"type": "heading", "level": 2, "text": "Thành viên nhóm"},
-    {"type": "table", "caption": "Danh sách thành viên nhóm",
-     "columns": ["STT", "MSSV", "Họ và tên", "Email"],
-     "col_widths": [1, 2, 3, 5],
-     "rows": [
-       ["1", "22127102", "Nguyễn Minh An", "[22127102@student.example.edu.vn](mailto:22127102@student.example.edu.vn)"],
-       ["2", "22127117", "Lê Thu Bình", "[22127117@student.example.edu.vn](mailto:22127117@student.example.edu.vn)"]
-     ]},
-    {"type": "heading", "level": 2, "text": "Bảng phân công công việc"},
-    {"type": "table", "caption": "Phân công công việc và mức độ hoàn thành",
-     "columns": ["STT", "Người phụ trách", "Nhiệm vụ được giao", "Mức độ hoàn thành"],
-     "col_widths": [1, 3, 4, 2.4],
-     "rows": [
-       ["1", "Nguyễn Minh An", "- Làm bài 1.\n- Viết báo cáo bài 1.\n- Chỉnh sửa báo cáo.", "100%"],
-       ["2", "Lê Thu Bình", "- Làm bài 2.\n- Viết báo cáo bài 2.\n- Tạo khuôn báo cáo.", "100%"]
-     ]},
-
-    {"type": "heading", "level": 1, "text": "Nội dung"},
-    {"type": "heading", "level": 2, "text": "Bài 1 – Định tuyến tĩnh và DHCP"},
-    {"type": "heading", "level": 3, "text": "Đề bài"},
-    {"type": "paragraph", "text": "Thiết lập sơ đồ mạng như hình dưới và thực hiện các yêu cầu sau:"},
-    {"type": "figure_placeholder", "caption": "Sơ đồ mạng của bài 1", "description": "Ảnh chụp sơ đồ mạng trong Cisco Packet Tracer (3 router, 2 switch, DHCP server, PC1–PC6)"},
-    {"type": "list", "style": "number", "items": [
-      "X là 2 số cuối của MSSV của một sinh viên đại diện cho nhóm; nếu X = 00 thì lấy X = 01.",
-      "Cấu hình địa chỉ IP tĩnh cho các thiết bị như hình vẽ.",
-      "Cấu hình DHCP server cấp phát IP cho PC1 và PC2: dãy 172.X.1.1 – 100/24, default gateway 172.X.1.254.",
-      "Cấu hình định tuyến tĩnh cho các router để các PC trên sơ đồ liên lạc được với nhau."
-    ]},
-    {"type": "heading", "level": 3, "text": "Bài làm"},
-    {"type": "paragraph", "text": "Chọn **X = 02** (theo MSSV 22127102). Các router nối với nhau bằng cáp *Copper Cross-Over*; switch nối với router, server và PC bằng cáp *Copper Straight-Through*."},
-    {"type": "note", "kind": "tip", "text": "Router 2 mặc định chỉ có FastEthernet0/0 và FastEthernet0/1. Tắt nguồn router trong tab Physical, lắp module **NM-2FE2W** để có thêm cổng FastEthernet1/0, rồi bật lại."},
-    {"type": "table", "caption": "Bảng địa chỉ IP tĩnh của các thiết bị",
-     "columns": ["Thiết bị", "Cổng", "Địa chỉ IP"],
-     "rows": [
-       ["Router 1", "F0/0", "172.2.1.254/24"],
-       ["Router 1", "F0/1", "172.2.2.1/24"],
-       ["Router 2", "F0/0", "172.2.3.254/24"],
-       ["Router 2", "F0/1", "172.2.2.2/24"],
-       ["Router 2", "F1/0", "172.2.4.2/24"],
-       ["Router 3", "F0/0", "172.2.5.254/24"],
-       ["Router 3", "F0/1", "172.2.4.1/24"],
-       ["PC3 / PC4", "NIC", "172.2.3.1/24 / 172.2.3.2/24"],
-       ["PC5 / PC6", "NIC", "172.2.5.1/24 / 172.2.5.2/24"]
-     ]},
-    {"type": "paragraph", "text": "Cấu hình DHCP server cấp phát địa chỉ từ 172.2.1.1 đến 172.2.1.100, subnet mask 255.255.255.0 (/24), default gateway 172.2.1.254. Các bước thực hiện:"},
-    {"type": "list", "style": "roman", "items": [
-      "Chọn Server → *Services* → *DHCP*.",
-      "Bật *Service* sang **On**.",
-      "Nhập *Default Gateway* là 172.2.1.254.",
-      "Nhập *Start IP Address* là 172.2.1.1 và *Subnet Mask* là 255.255.255.0.",
-      "Đặt *Maximum Number of Users* là 100, chọn **Save** và kiểm tra lại thông tin."
-    ]},
-    {"type": "figure_placeholder", "caption": "Cấu hình dịch vụ DHCP trên server", "description": "Ảnh chụp tab Services → DHCP sau khi lưu"},
-    {"type": "paragraph", "text": "Ban đầu mỗi router chỉ biết các mạng kết nối trực tiếp, vì vậy cần thêm định tuyến tĩnh tới các mạng còn thiếu theo cú pháp `ip route <mạng đích> <subnet mask> <next hop>`. Ví dụ trên Router 1:"},
-    {"type": "code", "caption": "Cấu hình định tuyến tĩnh trên Router 1", "language": "cisco",
-     "code": "Router> enable\nRouter# configure terminal\nRouter(config)# ip route 172.2.3.0 255.255.255.0 172.2.2.2\nRouter(config)# ip route 172.2.4.0 255.255.255.0 172.2.2.2\nRouter(config)# ip route 172.2.5.0 255.255.255.0 172.2.4.1\nRouter(config)# end\nRouter# show ip route"},
-    {"type": "paragraph", "text": "Kết quả `show ip route` cho thấy Router 1 kết nối trực tiếp với 172.2.1.0/24 và 172.2.2.0/24; các mạng 172.2.3.0/24 và 172.2.4.0/24 đi qua 172.2.2.2, còn 172.2.5.0/24 đi qua 172.2.4.1. Gửi gói tin thử từ PC3 sang PC5 cho kết quả *Successful*."},
-    {"type": "figure_placeholder", "caption": "Kiểm tra kết nối từ PC3 đến PC5", "description": "Ảnh chụp cột Last Status trong chế độ Simulation"},
-
-    {"type": "heading", "level": 2, "text": "Bài 2 – Web, DNS, DHCP Relay và RIP"},
-    {"type": "heading", "level": 3, "text": "Đề bài"},
-    {"type": "list", "style": "dash", "items": [
-      "Cấu hình địa chỉ IP tĩnh cho các thiết bị như hình vẽ (X = 02).",
-      "Thiết lập Web Server với tên miền www.congtyXYZ.com hiển thị MSSV và họ tên các thành viên.",
-      "Thiết lập DNS server phân giải tên miền trên.",
-      "Cấu hình DHCP server cấp IP cho các subnet 192.X.1.0/24, 192.X.3.0/24, 192.X.5.0/24 thông qua DHCP Relay Agent.",
-      "Cấu hình định tuyến động RIP để các PC liên lạc được với nhau.",
-      "Truy cập website bằng tên miền từ một máy thuộc subnet 192.X.3.0/24 hoặc 192.X.5.0/24."
-    ]},
-    {"type": "heading", "level": 3, "text": "Bài làm"},
-    {"type": "paragraph", "text": "Nối hai thiết bị khác tầng bằng cáp thẳng và hai thiết bị cùng tầng bằng cáp chéo, sau đó chuyển các cổng router sang trạng thái `no shutdown`."},
-    {"type": "paragraph", "text": "Web server được cấu hình với tên miền **www.congtyhanhoa.vn**: bật HTTP/HTTPS, chỉnh sửa `index.html` và thêm trang `thanhvien.html`. Trên DNS server, bật dịch vụ DNS và thêm bản ghi A trỏ tên miền về địa chỉ IP của Web server."},
-    {"type": "paragraph", "text": "Trên mỗi router, vào *Routing → RIP* và khai báo các mạng kết nối trực tiếp. Tại các cổng router nối với mạng cục bộ (Router1 và Router3), cấu hình DHCP Relay Agent:"},
-    {"type": "code", "caption": "Cấu hình DHCP Relay Agent", "language": "cisco",
-     "code": "Router(config)# interface FastEthernet0/0\nRouter(config-if)# ip helper-address <IP của DHCP server>\nRouter(config-if)# end"},
-    {"type": "note", "kind": "warning", "text": "Phải khai báo đúng Default Gateway trong từng pool DHCP vì server dùng địa chỉ này để xác định mạng con cần cấp phát."},
-    {"type": "figure_placeholder", "caption": "Truy cập www.congtyhanhoa.vn từ PC3 và PC5", "description": "Ảnh chụp Web Browser trên PC3 (192.2.3.0/24) và PC5 (192.2.5.0/24)"},
-    {"type": "divider"}
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Bài 1 – Định tuyến tĩnh và DHCP"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Đề bài"
+    },
+    {
+      "type": "paragraph",
+      "text": "Thiết lập sơ đồ mạng như hình dưới và thực hiện các yêu cầu sau:"
+    },
+    {
+      "type": "figure_placeholder",
+      "caption": "Sơ đồ mạng của bài 1",
+      "description": "Ảnh chụp sơ đồ mạng trong Cisco Packet Tracer (3 router, 2 switch, DHCP server, PC1–PC6)"
+    },
+    {
+      "type": "list",
+      "style": "number",
+      "items": [
+        "X là 2 số cuối của MSSV của một sinh viên đại diện cho nhóm; nếu X = 00 thì lấy X = 01.",
+        "Cấu hình địa chỉ IP tĩnh cho các thiết bị như hình vẽ.",
+        "Cấu hình DHCP server cấp phát IP cho PC1 và PC2: dãy 172.X.1.1 – 100/24, default gateway 172.X.1.254.",
+        "Cấu hình định tuyến tĩnh cho các router để các PC trên sơ đồ liên lạc được với nhau."
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Bài làm"
+    },
+    {
+      "type": "paragraph",
+      "text": "Chọn **X = 02** (theo MSSV 22127102). Các router nối với nhau bằng cáp *Copper Cross-Over*; switch nối với router, server và PC bằng cáp *Copper Straight-Through*."
+    },
+    {
+      "type": "note",
+      "kind": "tip",
+      "text": "Router 2 mặc định chỉ có FastEthernet0/0 và FastEthernet0/1. Tắt nguồn router trong tab Physical, lắp module **NM-2FE2W** để có thêm cổng FastEthernet1/0, rồi bật lại."
+    },
+    {
+      "type": "table",
+      "caption": "Bảng địa chỉ IP tĩnh của các thiết bị",
+      "columns": [
+        "Thiết bị",
+        "Cổng",
+        "Địa chỉ IP"
+      ],
+      "rows": [
+        [
+          "Router 1",
+          "F0/0",
+          "172.2.1.254/24"
+        ],
+        [
+          "Router 1",
+          "F0/1",
+          "172.2.2.1/24"
+        ],
+        [
+          "Router 2",
+          "F0/0",
+          "172.2.3.254/24"
+        ],
+        [
+          "Router 2",
+          "F0/1",
+          "172.2.2.2/24"
+        ],
+        [
+          "Router 2",
+          "F1/0",
+          "172.2.4.2/24"
+        ],
+        [
+          "Router 3",
+          "F0/0",
+          "172.2.5.254/24"
+        ],
+        [
+          "Router 3",
+          "F0/1",
+          "172.2.4.1/24"
+        ],
+        [
+          "PC3 / PC4",
+          "NIC",
+          "172.2.3.1/24 / 172.2.3.2/24"
+        ],
+        [
+          "PC5 / PC6",
+          "NIC",
+          "172.2.5.1/24 / 172.2.5.2/24"
+        ]
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Cấu hình DHCP server cấp phát địa chỉ từ 172.2.1.1 đến 172.2.1.100, subnet mask 255.255.255.0 (/24), default gateway 172.2.1.254. Các bước thực hiện:"
+    },
+    {
+      "type": "list",
+      "style": "roman",
+      "items": [
+        "Chọn Server → *Services* → *DHCP*.",
+        "Bật *Service* sang **On**.",
+        "Nhập *Default Gateway* là 172.2.1.254.",
+        "Nhập *Start IP Address* là 172.2.1.1 và *Subnet Mask* là 255.255.255.0.",
+        "Đặt *Maximum Number of Users* là 100, chọn **Save** và kiểm tra lại thông tin."
+      ]
+    },
+    {
+      "type": "figure_placeholder",
+      "caption": "Cấu hình dịch vụ DHCP trên server",
+      "description": "Ảnh chụp tab Services → DHCP sau khi lưu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ban đầu mỗi router chỉ biết các mạng kết nối trực tiếp, vì vậy cần thêm định tuyến tĩnh tới các mạng còn thiếu theo cú pháp `ip route <mạng đích> <subnet mask> <next hop>`. Ví dụ trên Router 1:"
+    },
+    {
+      "type": "code",
+      "caption": "Cấu hình định tuyến tĩnh trên Router 1",
+      "language": "cisco",
+      "code": "Router> enable\nRouter# configure terminal\nRouter(config)# ip route 172.2.3.0 255.255.255.0 172.2.2.2\nRouter(config)# ip route 172.2.4.0 255.255.255.0 172.2.2.2\nRouter(config)# ip route 172.2.5.0 255.255.255.0 172.2.4.1\nRouter(config)# end\nRouter# show ip route"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kết quả `show ip route` cho thấy Router 1 kết nối trực tiếp với 172.2.1.0/24 và 172.2.2.0/24; các mạng 172.2.3.0/24 và 172.2.4.0/24 đi qua 172.2.2.2, còn 172.2.5.0/24 đi qua 172.2.4.1. Gửi gói tin thử từ PC3 sang PC5 cho kết quả *Successful*."
+    },
+    {
+      "type": "figure_placeholder",
+      "caption": "Kiểm tra kết nối từ PC3 đến PC5",
+      "description": "Ảnh chụp cột Last Status trong chế độ Simulation"
+    },
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "Bài 2 – Web, DNS, DHCP Relay và RIP"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Đề bài"
+    },
+    {
+      "type": "list",
+      "style": "dash",
+      "items": [
+        "Cấu hình địa chỉ IP tĩnh cho các thiết bị như hình vẽ (X = 02).",
+        "Thiết lập Web Server với tên miền www.congtyXYZ.com hiển thị MSSV và họ tên các thành viên.",
+        "Thiết lập DNS server phân giải tên miền trên.",
+        "Cấu hình DHCP server cấp IP cho các subnet 192.X.1.0/24, 192.X.3.0/24, 192.X.5.0/24 thông qua DHCP Relay Agent.",
+        "Cấu hình định tuyến động RIP để các PC liên lạc được với nhau.",
+        "Truy cập website bằng tên miền từ một máy thuộc subnet 192.X.3.0/24 hoặc 192.X.5.0/24."
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Bài làm"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nối hai thiết bị khác tầng bằng cáp thẳng và hai thiết bị cùng tầng bằng cáp chéo, sau đó chuyển các cổng router sang trạng thái `no shutdown`."
+    },
+    {
+      "type": "paragraph",
+      "text": "Web server được cấu hình với tên miền **www.congtyhanhoa.vn**: bật HTTP/HTTPS, chỉnh sửa `index.html` và thêm trang `thanhvien.html`. Trên DNS server, bật dịch vụ DNS và thêm bản ghi A trỏ tên miền về địa chỉ IP của Web server."
+    },
+    {
+      "type": "paragraph",
+      "text": "Trên mỗi router, vào *Routing → RIP* và khai báo các mạng kết nối trực tiếp. Tại các cổng router nối với mạng cục bộ (Router1 và Router3), cấu hình DHCP Relay Agent:"
+    },
+    {
+      "type": "code",
+      "caption": "Cấu hình DHCP Relay Agent",
+      "language": "cisco",
+      "code": "Router(config)# interface FastEthernet0/0\nRouter(config-if)# ip helper-address <IP của DHCP server>\nRouter(config-if)# end"
+    },
+    {
+      "type": "note",
+      "kind": "warning",
+      "text": "Phải khai báo đúng Default Gateway trong từng pool DHCP vì server dùng địa chỉ này để xác định mạng con cần cấp phát."
+    },
+    {
+      "type": "figure_placeholder",
+      "caption": "Truy cập www.congtyhanhoa.vn từ PC3 và PC5",
+      "description": "Ảnh chụp Web Browser trên PC3 (192.2.3.0/24) và PC5 (192.2.5.0/24)"
+    },
+    {
+      "type": "divider"
+    }
   ],
   "references": [
-    {"text": "Computer Networking Notes – How to configure DHCP Relay Agent on Cisco routers", "url": "https://www.computernetworkingnotes.com/ccna-study-guide/how-to-configure-dhcp-relay-agent-on-cisco-routers.html"},
-    {"text": "Cisco Networking Academy – Packet Tracer", "url": "https://www.netacad.com/cisco-packet-tracer"}
+    {
+      "text": "Computer Networking Notes – How to configure DHCP Relay Agent on Cisco routers",
+      "url": "https://www.computernetworkingnotes.com/ccna-study-guide/how-to-configure-dhcp-relay-agent-on-cisco-routers.html"
+    },
+    {
+      "text": "Cisco Networking Academy – Packet Tracer",
+      "url": "https://www.netacad.com/cisco-packet-tracer"
+    }
   ]
 }

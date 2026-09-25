@@ -158,6 +158,14 @@ def lint_docx(path: str | Path, profile: str = "hcmus-clc") -> list[LintIssue]:
     for label in find_watermarks(path):
         issues.append(LintIssue("warning", "ai-label", f"Còn nhãn trình tạo/AI: {label} - chạy watermark-remover."))
 
+    from .barem import barem_outline_labels  # import muộn: barem.py dùng LintIssue của module này
+
+    headings = [p.text.strip().casefold() for p in items
+                if isinstance(p, Paragraph) and _heading_level(p) and p.text.strip()]
+    for required in barem_outline_labels(prof):
+        if not any(required.casefold() in h for h in headings):
+            issues.append(LintIssue("warning", "barem-missing", f"Thiếu phần bắt buộc của barem: '{required}'."))
+
     fonts_seen: dict[str, int] = {}
     empty_run = 0
     prev_level = 0

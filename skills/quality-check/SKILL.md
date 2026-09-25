@@ -1,11 +1,13 @@
 ---
 name: quality-check
-description: Kiểm tra chất lượng báo cáo Word sau khi lưu (lint font, tiêu đề, chú thích, gạch đầu dòng gõ tay, chính tả, mục lục, số trang) và vòng lặp sửa lỗi. Dùng SAU MỖI lần save_report và khi người dùng muốn rà soát một file .docx có sẵn.
+description: Chấm barem và kiểm tra chất lượng báo cáo Word (đủ phần bắt buộc của barem, font, tiêu đề, chú thích, gạch đầu dòng gõ tay, chính tả, mục lục, số trang) và vòng lặp sửa lỗi. Dùng SAU MỖI lần save_report và khi người dùng muốn rà soát một file .docx có sẵn.
 ---
 
 # Kiểm tra chất lượng
 
-1. `lint_document(path, profile)` → danh sách issue `{severity, rule, message, location}`.
+1. Trước khi lưu: `check_barem(doc_id)` → phần còn thiếu so với barem (thành viên, phân công, lời mở đầu,
+   GVHD, chương nội dung, tài liệu tham khảo, tham chiếu `[[label]]` hỏng). `save_report` cũng trả về mục `barem`.
+2. Sau khi lưu: `lint_document(path, profile)` → danh sách issue `{severity, rule, message, location}`.
 2. Sửa theo thứ tự: `error` → `warning` → `info` (info có thể chấp nhận nếu có lý do).
 3. Với báo cáo đang soạn trong phiên: sửa block qua `update_block` rồi `save_report` lại.
    Với file .docx bên ngoài: xem skill `edit-existing-docx`.
@@ -13,6 +15,8 @@ description: Kiểm tra chất lượng báo cáo Word sau khi lưu (lint font, 
 
 | rule | Ý nghĩa | Cách sửa |
 |---|---|---|
+| barem (spec) | Thiếu dữ liệu cho một phần của barem | Bổ sung `meta`, `preface`, `assignments`, `body`, `references` |
+| barem-missing (docx) | File thiếu tiêu đề bắt buộc (LỜI MỞ ĐẦU, MỤC LỤC, Giới thiệu chung, Thành viên nhóm, Bảng phân công, Nội dung, Tài liệu tham khảo) | Dựng lại theo barem (skill `report-structure-vn`) |
 | no-toc | Thiếu mục lục tự động | `include_toc: true` |
 | no-page-number | Footer không có số trang | Render lại bằng profile |
 | heading-skip | Nhảy cấp tiêu đề | Chỉnh `level` |

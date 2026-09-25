@@ -5,7 +5,11 @@ description: Quy tắc tiêu đề nhiều cấp và đánh số tự động (I
 
 # Tiêu đề & đánh số
 
-- `heading.level`: 1 = chương (La Mã "I."), 2 = mục ("1."), 3 = tiểu mục ("1.1.").
+- Barem: renderer tự tạo "I. Giới thiệu chung" và "II. Nội dung"; trong `body`, cấp 1 = chương → hiển thị "1.",
+  cấp 2 → "1.1.", cấp 3 → "1.1.1." (không vào mục lục). Trong `introduction`, cấp 1 → "3.", "4." của mục I.
+- Không dùng barem (profile khác): 1 = chương ("I."), 2 = mục ("1."), 3 = tiểu mục ("1.1."), 4 = "1.1.1.".
+- Câu dẫn tới mục/bảng/hình: gắn `label` rồi viết `[[label]]` (ví dụ "xem mục [[sec-euler]]" → "xem mục 2.5.1",
+  "theo [[tab-plan]]" → "theo Bảng 9"). Không gõ cứng số vì số thay đổi khi đổi khung.
 - `text` KHÔNG chứa số thứ tự. Sai: `"2. Bảng phân công"`. Đúng: `"Bảng phân công"`.
 - Không nhảy cấp (level 1 → level 3). Lint báo `heading-skip` nếu vi phạm.
 - Tiêu đề ngắn gọn (≤ 12 từ), không kết thúc bằng dấu chấm/dấu hai chấm.

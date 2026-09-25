@@ -1,9 +1,23 @@
-# Style profile trích xuất từ báo cáo mẫu "Báo cáo đồ án học phần Mạng máy tính - CLC HCMUS".
+# BAREM CHUẨN của dự án - trích xuất từ báo cáo mẫu "Báo cáo đồ án học phần Mạng máy tính - CLC HCMUS".
+# Mọi báo cáo (dù nguồn có định dạng gì) đều được dựng lại theo khung + định dạng này.
 # Số đo lấy từ PDF (PyMuPDF): khổ Letter 612x792pt, lề 72pt, thân bài Times New Roman 13.9pt,
 # tiêu đề xanh #2F5496, header 12pt có đường kẻ dưới, số trang 12pt có đường kẻ trên,
 # hàng tiêu đề bảng tô xám #D0CECE, siêu liên kết #0563C1.
 name: hcmus-clc
-description: Báo cáo đồ án/học phần kiểu ĐH KHTN - ĐHQG TP.HCM (chương trình CLC)
+description: Barem báo cáo đồ án/học phần ĐH KHTN - ĐHQG TP.HCM (theo báo cáo mẫu CLC)
+
+# Khung bắt buộc của barem (renderer tự dựng):
+#   Bìa -> LỜI MỞ ĐẦU -> MỤC LỤC -> I. Giới thiệu chung (1. Thành viên nhóm, 2. Bảng phân công công việc,
+#   rồi spec.introduction) -> II. Nội dung (các chương của spec.body, hạ một cấp) -> III. Tài liệu tham khảo
+barem:
+  enabled: true
+  intro_title: Giới thiệu chung
+  members_title: Thành viên nhóm
+  members_caption: Danh sách thành viên nhóm
+  assignments_title: Bảng phân công công việc
+  assignments_caption: Phân công công việc và mức độ hoàn thành
+  content_title: Nội dung
+  placeholder: "……"
 
 page:
   size: letter            # letter | a4
@@ -35,6 +49,7 @@ headings:
   level1: {size_pt: 14, bold: true, space_before_pt: 12, space_after_pt: 6}
   level2: {size_pt: 14, bold: true, space_before_pt: 8, space_after_pt: 4, indent_cm: 0.63}
   level3: {size_pt: 14, bold: true, italic: false, space_before_pt: 6, space_after_pt: 4, indent_cm: 0.63, color: "1F3763"}
+  level4: {size_pt: 14, bold: true, italic: true, space_before_pt: 4, space_after_pt: 2, indent_cm: 0.63, color: "1F3763"}
 
 header:
   left: "{faculty}"
@@ -63,9 +78,13 @@ code:
   fill: "F2F2F2"
   border_color: "2F5496"
 
+lists:
+  bullet: dash            # barem dùng gạch đầu dòng "-" như bản mẫu
+
 hyperlink_color: "0563C1"
 heading_numbering: section  # section: I./1./1.1.  |  chapter: I./1.1./1.1.1., Hình 2.3
 references_numbered: true   # "III. Tài liệu tham khảo" là một chương có số như bản mẫu
+references_style: number    # 1. 2. 3. như bản mẫu
 divider_text: "---o0o---"
 
 labels:
